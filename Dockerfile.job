@@ -1,0 +1,21 @@
+# Refresh job container -- Cloud Run Job, triggered by Cloud Scheduler.
+# Runs the full PROJECT.md §10 automation flow: generate synthetic data,
+# upload to GCS, load BigQuery, compute metrics/decisions, build the
+# snapshot, call Gemini, upload the snapshot. Separate image from the
+# app's Dockerfile because this needs the "pipeline" extras
+# (google-cloud-bigquery, google-genai) that the always-on web app
+# container deliberately does not carry.
+FROM python:3.14-slim
+
+WORKDIR /app
+
+COPY pyproject.toml ./
+COPY src/ ./src/
+COPY config/ ./config/
+
+RUN pip install --no-cache-dir ".[pipeline]"
+
+# GCP_PROJECT_ID / GCS_BUCKET are provided as Cloud Run Job env vars at
+# deploy time (scripts/provision_scheduler.sh) -- not secrets, so no
+# Secret Manager dependency for this portfolio sample.
+CMD python -m commerce_lab.pipeline.refresh --upload --summarize

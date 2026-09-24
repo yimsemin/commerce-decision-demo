@@ -1,0 +1,11 @@
+# Cloud Build config for the refresh-job image. `gcloud builds submit
+# --tag` only supports a Dockerfile literally named "Dockerfile" in the
+# source root -- there is no --dockerfile flag on this gcloud version --
+# so Dockerfile.job needs an explicit build config instead.
+steps:
+  - name: "gcr.io/cloud-builders/docker"
+    args: ["build", "-f", "Dockerfile.job", "-t", "${_IMAGE}", "."]
+images:
+  - "${_IMAGE}"
+options:
+  substitutionOption: ALLOW_LOOSE

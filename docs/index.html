@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Commerce Decision Lab — 파편화된 데이터에서 경영 판단까지</title>
+<meta name="description" content="합성 커머스 데이터가 BigQuery 메트릭을 거쳐 결정적 이슈 탐지 규칙과 Gemini 해석으로 이어지는 과정을, 실제 시나리오를 직접 골라 끝까지 따라가며 확인하는 인터랙티브 데모 소개.">
+<style>
+  :root {
+    --bg: #0b0d12;
+    --bg-elev: #12151c;
+    --card: #171b24;
+    --border: #262c39;
+    --text: #e8eaf0;
+    --text-dim: #98a0b3;
+    --text-faint: #666f85;
+    --accent: #5b8cff;
+    --accent-soft: rgba(91, 140, 255, 0.12);
+    --high: #ff5c72;
+    --high-soft: rgba(255, 92, 114, 0.12);
+    --medium: #ffb020;
+    --medium-soft: rgba(255, 176, 32, 0.12);
+    --low: #3ecf8e;
+    --low-soft: rgba(62, 207, 142, 0.12);
+    --radius: 14px;
+    --maxw: 880px;
+  }
+  :root[data-theme="light"] {
+    --bg: #f5f6fa;
+    --bg-elev: #ffffff;
+    --card: #ffffff;
+    --border: #e1e4ec;
+    --text: #14171f;
+    --text-dim: #4c5266;
+    --text-faint: #848da3;
+    --accent: #3a63d8;
+    --accent-soft: rgba(58, 99, 216, 0.10);
+    --high: #d6304a;
+    --high-soft: rgba(214, 48, 74, 0.09);
+    --medium: #b0700a;
+    --medium-soft: rgba(176, 112, 10, 0.10);
+    --low: #1f9d68;
+    --low-soft: rgba(31, 157, 104, 0.10);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Pretendard", "Apple SD Gothic Neo", sans-serif;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    word-break: keep-all;
+    overflow-wrap: break-word;
+    transition: background 0.15s, color 0.15s;
+  }
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 20px; }
+  section { padding: 72px 0; }
+  section.tight { padding: 48px 0; }
+  h1, h2, h3 { line-height: 1.3; font-weight: 700; letter-spacing: -0.01em; }
+  h2 { font-size: 28px; margin: 0 0 12px; }
+  h3 { font-size: 18px; margin: 0 0 8px; }
+  p { color: var(--text-dim); margin: 0 0 16px; }
+  .eyebrow {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: var(--accent-soft);
+    padding: 4px 10px;
+    border-radius: 999px;
+    margin-bottom: 14px;
+  }
+  a { color: var(--accent); }
+  .hero {
+    padding: 96px 0 64px;
+    border-bottom: 1px solid var(--border);
+    background:
+      radial-gradient(circle at 15% 0%, rgba(91,140,255,0.15), transparent 45%),
+      radial-gradient(circle at 85% 20%, rgba(62,207,142,0.10), transparent 40%);
+  }
+  .hero h1 { font-size: 40px; margin: 0 0 18px; }
+  .hero .lede { font-size: 18px; color: var(--text-dim); max-width: 640px; }
+  .hero .hook {
+    margin-top: 32px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 22px;
+    font-size: 15px;
+    color: var(--text);
+  }
+  .hero .hook b { color: var(--high); }
+  .cta-row { margin-top: 28px; display: flex; gap: 12px; flex-wrap: wrap; }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 18px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 14px;
+    text-decoration: none;
+    border: 1px solid transparent;
+    cursor: pointer;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-secondary { background: transparent; color: var(--text); border-color: var(--border); }
+  .btn-primary:hover { filter: brightness(1.1); }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+  .data-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin-top: 8px;
+  }
+  .data-card {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 12px;
+    text-align: center;
+  }
+  .data-card .name { font-weight: 700; font-size: 13px; }
+  .data-card .desc { font-size: 12px; color: var(--text-faint); margin-top: 4px; }
+
+  .flow-note {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    margin-top: 20px;
+    font-size: 14px;
+  }
+  .flow-note code { background: var(--bg-elev); padding: 1px 6px; border-radius: 5px; font-size: 12.5px; }
+  .mermaid { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; margin-top: 16px; }
+
+  /* scenario picker */
+  .scenario-tabs {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-top: 20px;
+  }
+  .scenario-tab {
+    text-align: left;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 14px;
+    cursor: pointer;
+    color: var(--text);
+    font-family: inherit;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .scenario-tab:hover { border-color: var(--accent); }
+  .scenario-tab.active { border-color: var(--accent); background: var(--accent-soft); }
+  .scenario-tab .sev {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 999px;
+    margin-bottom: 8px;
+  }
+  .scenario-tab .sev.high { background: var(--high-soft); color: var(--high); }
+  .scenario-tab .title { font-size: 14px; font-weight: 700; }
+  .scenario-tab .sub { font-size: 12.5px; color: var(--text-faint); margin-top: 4px; }
+
+  .scenario-panel { display: none; margin-top: 28px; }
+  .scenario-panel.active { display: block; }
+  .step {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+  .step-num {
+    width: 28px; height: 28px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700;
+    flex-shrink: 0;
+  }
+  .step-body h4 { margin: 2px 0 8px; font-size: 15px; }
+  .step-body p { margin-bottom: 10px; font-size: 14.5px; }
+  .step-body img {
+    width: 100%;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    display: block;
+  }
+  .metric-pair { display: flex; gap: 18px; margin: 10px 0; flex-wrap: wrap; }
+  .metric-pill {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+  .metric-pill .label { color: var(--text-faint); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .metric-pill .val { font-weight: 700; font-size: 15px; }
+  .metric-pill .val.down { color: var(--high); }
+  .action-box {
+    background: var(--low-soft);
+    border: 1px solid rgba(62,207,142,0.35);
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-size: 14px;
+  }
+  .action-box .label { color: var(--low); font-weight: 700; font-size: 12px; text-transform: uppercase; margin-bottom: 4px; }
+
+  /* verification section */
+  .verify-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-top: 20px;
+  }
+  .verify-compare { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 16px; margin-top: 16px; }
+  .verify-col { background: var(--bg-elev); border-radius: 10px; padding: 14px 16px; }
+  .verify-col.before { border: 1px solid rgba(255,92,114,0.35); }
+  .verify-col.after { border: 1px solid rgba(62,207,142,0.35); }
+  .verify-col .tag { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+  .verify-col.before .tag { color: var(--high); }
+  .verify-col.after .tag { color: var(--low); }
+  .verify-col .num { font-size: 20px; font-weight: 700; margin: 6px 0 2px; }
+  .verify-col .sub { font-size: 12.5px; color: var(--text-faint); }
+  .verify-arrow { color: var(--text-faint); font-size: 20px; }
+  .code-note { font-size: 12.5px; color: var(--text-faint); margin-top: 14px; }
+  .code-note code { background: var(--bg-elev); padding: 1px 6px; border-radius: 5px; }
+
+  /* architecture */
+  .arch-list { display: grid; gap: 10px; margin-top: 20px; }
+  .arch-row {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    gap: 14px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 13.5px;
+    align-items: center;
+  }
+  .arch-row .comp { font-weight: 700; }
+  .arch-row .why { color: var(--text-dim); }
+
+  .footnote { font-size: 13px; color: var(--text-faint); margin-top: 20px; }
+
+  .final-cta {
+    text-align: center;
+    border-top: 1px solid var(--border);
+    padding: 80px 0 100px;
+    background: radial-gradient(circle at 50% 0%, rgba(91,140,255,0.12), transparent 55%);
+  }
+  .final-cta h2 { font-size: 30px; }
+  .final-cta p { max-width: 520px; margin-left: auto; margin-right: auto; }
+  .final-cta .cta-row { justify-content: center; margin-top: 24px; }
+
+  footer { text-align: center; padding: 32px 0; color: var(--text-faint); font-size: 12.5px; }
+
+  .theme-toggle {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 50;
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 17px;
+    line-height: 1;
+    padding: 0;
+  }
+  .theme-toggle:hover { border-color: var(--accent); }
+  :root[data-theme="light"] .theme-toggle .icon-dark { display: none; }
+  :root:not([data-theme="light"]) .theme-toggle .icon-light { display: none; }
+
+  @media (max-width: 720px) {
+    .theme-toggle { top: 10px; right: 10px; width: 36px; height: 36px; }
+    .hero { padding: 56px 0 40px; }
+    .hero h1 { font-size: 28px; }
+    section { padding: 48px 0; }
+    .data-grid { grid-template-columns: repeat(2, 1fr); }
+    .scenario-tabs { grid-template-columns: 1fr; }
+    .verify-compare { grid-template-columns: 1fr; }
+    .verify-arrow { transform: rotate(90deg); justify-self: center; }
+    .arch-row { grid-template-columns: 1fr; }
+  }
+</style>
+<script>
+  (function () {
+    try {
+      var saved = localStorage.getItem("theme");
+      var theme = saved || (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+      document.documentElement.setAttribute("data-theme", theme);
+    } catch (e) {}
+  })();
+</script>
+</head>
+<body>
+
+<button class="theme-toggle" id="theme-toggle" type="button" aria-label="라이트/다크 모드 전환">
+  <span class="icon-dark">🌙</span>
+  <span class="icon-light">☀️</span>
+</button>
+
+<section class="hero">
+  <div class="wrap">
+    <span class="eyebrow">GCP 포트폴리오 데모</span>
+    <h1>Commerce Decision Lab</h1>
+    <p class="lede">파편화된 합성 커머스 데이터를 경영 판단의 근거로 바꾸는 시스템. 화려한 대시보드가 아니라, 화면에 뜬 숫자 하나하나를 계산한 SQL까지 거슬러 올라갈 수 있는 <b style="color:var(--text)">추적 가능한 의사결정 시스템</b>을 보여줍니다.</p>
+    <div class="hook">
+      여러 브랜드·채널·유료 마케팅을 운영하는 회사에서, 이번 달 매출이 흔들렸습니다. <b>원인이 무엇인지 답하는 데 며칠이 걸린다면?</b> 이 데모는 그 질문에 몇 초 만에, 근거를 붙여서 답하는 시스템입니다.
+    </div>
+    <div class="cta-row">
+      <a href="#scenarios" class="btn btn-primary">시나리오 하나 골라서 따라가보기 ↓</a>
+      <a href="https://github.com/yimsemin/commerce-decision-demo" class="btn btn-secondary" target="_blank" rel="noopener">GitHub 저장소</a>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <span class="eyebrow">01 · 파편화된 현실</span>
+    <h2>대부분의 조직이 이 상태입니다</h2>
+    <p>주문, 마케팅 지출, 재고, 고객 데이터가 시스템별로 따로 쌓여 있습니다. 이 데모는 실제 회사 데이터 대신, 같은 문제를 재현하도록 설계된 <b style="color:var(--text)">합성 데이터 5종</b>을 씁니다 — 브랜드 3개 × 채널 3개 × SKU 24개 × 고객 900명, 120일 치.</p>
+    <div class="data-grid">
+      <div class="data-card"><div class="name">orders.csv</div><div class="desc">주문 단위<br>브랜드·채널·SKU</div></div>
+      <div class="data-card"><div class="name">marketing.csv</div><div class="desc">브랜드×채널×일<br>지출·기여매출</div></div>
+      <div class="data-card"><div class="name">inventory.csv</div><div class="desc">SKU×일<br>재고·입고·판매</div></div>
+      <div class="data-card"><div class="name">customers.csv</div><div class="desc">고객 단위<br>획득채널·재구매</div></div>
+      <div class="data-card"><div class="name">skus.csv</div><div class="desc">SKU 단위<br>브랜드·원가</div></div>
+    </div>
+    <div class="flow-note">
+      이 5개 원본은 그대로는 질문에 답하지 못합니다. <code>raw</code> → <code>staging</code> → <code>metrics</code> 3단계 BigQuery 레이어를 거치며 비교 가능한 KPI로 바뀌고, 그 위에 <b>결정적 규칙</b>이 이슈를 탐지합니다. 여기까지는 전부 SQL/Python이고 재현 가능하며 테스트로 검증됩니다 — AI는 아직 등장하지 않습니다.
+    </div>
+  </div>
+</section>
+
+<section id="scenarios" class="tight" style="border-top:1px solid var(--border); border-bottom:1px solid var(--border); background:var(--bg-elev);">
+  <div class="wrap">
+    <span class="eyebrow">02 · 직접 골라서 끝까지 따라가기</span>
+    <h2>데이터에 4개의 이슈를 실제로 심어뒀습니다</h2>
+    <p>아래 카드 중 하나를 클릭하면, 원본 데이터의 패턴 → 증거 화면 → 시스템이 내린 판단(우선순위·근거·조치)까지, 실제 로컬 실행에서 캡처한 화면으로 끝까지 따라갈 수 있습니다.</p>
+
+    <div class="scenario-tabs" id="scenario-tabs">
+      <button class="scenario-tab active" data-target="s-marketing">
+        <span class="sev high">HIGH</span>
+        <div class="title">마케팅 효율 악화</div>
+        <div class="sub">Kestrel / paid_social</div>
+      </button>
+      <button class="scenario-tab" data-target="s-inventory">
+        <span class="sev high">HIGH</span>
+        <div class="title">품절 위험</div>
+        <div class="sub">SKU AUR-003 (Aurora)</div>
+      </button>
+      <button class="scenario-tab" data-target="s-performance">
+        <span class="sev high">HIGH</span>
+        <div class="title">세그먼트 집중 매출 하락</div>
+        <div class="sub">Marlow / retail_partner</div>
+      </button>
+      <button class="scenario-tab" data-target="s-customer">
+        <span class="sev high">HIGH</span>
+        <div class="title">신규 고객 비중 급감</div>
+        <div class="sub">전체 신규-재구매 구성</div>
+      </button>
+    </div>
+
+    <!-- Scenario 1: Marketing -->
+    <div class="scenario-panel active" id="s-marketing">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h4>심어진 패턴</h4>
+          <p>Kestrel 브랜드의 paid_social 채널에서, 최근 30일 구간 지출이 이전 구간 대비 약 2.6배로 늘었지만 기여 매출은 거의 그대로입니다. 다른 브랜드/채널 조합은 지출-매출 관계가 안정적으로 유지됩니다.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h4>증거 — Marketing 화면</h4>
+          <p>실제 KPI 테이블에서 Kestrel / paid_social 행만 ROAS가 무너진 게 보입니다.</p>
+          <img src="screenshots/scenarios/marketing_evidence.png" alt="Marketing 탭에서 Kestrel paid_social의 ROAS가 2.84에서 1.14로 떨어진 표와 차트">
+          <div class="metric-pair">
+            <div class="metric-pill"><div class="label">지출</div><div class="val down">$4,627 → $11,668</div></div>
+            <div class="metric-pill"><div class="label">ROAS</div><div class="val down">2.84 → 1.14 (-59.9%)</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h4>시스템의 판단 — Decisions 카드</h4>
+          <p>결정적 규칙이 <code>roas_change_pct ≤ -40%</code> 조건으로 high 심각도를 부여하고, 근거와 조치를 구조화합니다.</p>
+          <img src="screenshots/scenarios/marketing_decision.png" alt="Marketing efficiency deteriorating for Kestrel paid_social 결정 카드, high 심각도, 근거와 제안 조치 포함">
+          <div class="action-box">
+            <div class="label">제안 조치 · 모니터링 KPI</div>
+            타겟팅/크리에이티브/입찰 전략 재검토, 성과 좋은 세그먼트로 예산 재배분 검토 — 이후 <code>roas[Kestrel / paid_social]</code>를 계속 지켜봄.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scenario 2: Inventory -->
+    <div class="scenario-panel" id="s-inventory">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h4>심어진 패턴</h4>
+          <p>SKU AUR-003(Aurora)은 최근 구간 수요 비중이 약 2.8배로 커지는 동시에 입고가 거의 0으로 줄었습니다. 다른 SKU들은 실수요를 따라가는 반응형 재입고 정책 덕분에 20~35일 수준의 안정적인 재고 커버리지를 유지합니다.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h4>증거 — Inventory 화면</h4>
+          <p>재고 위험 후보 목록 맨 위, AUR-003만 재고 0에 재고소진일수 0.0으로 표시됩니다.</p>
+          <img src="screenshots/scenarios/inventory_evidence.png" alt="Inventory 탭에서 AUR-003의 재고 0, days_of_cover 0.0으로 표시된 위험 후보 테이블">
+          <div class="metric-pair">
+            <div class="metric-pill"><div class="label">보유 재고</div><div class="val down">0</div></div>
+            <div class="metric-pill"><div class="label">재고 소진 일수</div><div class="val down">0.0일</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h4>시스템의 판단 — Decisions 카드</h4>
+          <p><code>days_of_cover &lt; 3</code>이면 high로 분류되는 규칙이 발동했습니다.</p>
+          <img src="screenshots/scenarios/inventory_decision.png" alt="Stock-out risk for SKU AUR-003 결정 카드, high 심각도, 근거와 제안 조치 포함">
+          <div class="action-box">
+            <div class="label">제안 조치 · 모니터링 KPI</div>
+            AUR-003 긴급 재입고, 필요시 임시 배분 상한 고려 — 이후 <code>days_of_cover[AUR-003]</code>를 계속 지켜봄.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scenario 3: Performance -->
+    <div class="scenario-panel" id="s-performance">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h4>심어진 패턴</h4>
+          <p>Marlow / retail_partner 세그먼트만 최근 구간 주문 비중이 줄어듭니다. 회사 전체 매출은 대체로 평탄해 보이지만, 이 한 세그먼트에서는 실질적인 순매출 하락이 발생합니다 — 전체 지표만 보면 놓치기 쉬운 패턴입니다.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h4>증거 — Performance 화면</h4>
+          <p>브랜드×채널 테이블에서 Marlow / retail_partner 행만 두드러지게 하락한 게 보입니다.</p>
+          <img src="screenshots/scenarios/performance_evidence.png" alt="Performance 탭에서 Marlow retail_partner 순매출이 6224.64에서 3593.36으로 하락한 표와 차트">
+          <div class="metric-pair">
+            <div class="metric-pill"><div class="label">순매출</div><div class="val down">$6,224.64 → $3,593.36 (-42.3%)</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h4>시스템의 판단 — Decisions 카드</h4>
+          <p><code>pct_change ≤ -35%</code> 조건으로 high 심각도가 부여됐습니다.</p>
+          <img src="screenshots/scenarios/performance_decision.png" alt="Material sales decline in Marlow retail_partner 결정 카드, high 심각도, 근거와 제안 조치 포함">
+          <div class="action-box">
+            <div class="label">제안 조치 · 모니터링 KPI</div>
+            Marlow / retail_partner의 수요·가격·구색을 조사 — 이후 <code>net_revenue[Marlow / retail_partner]</code>를 계속 지켜봄.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scenario 4: Customer -->
+    <div class="scenario-panel" id="s-customer">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h4>심어진 패턴</h4>
+          <p>신규 고객이 주문을 낼 확률이 베이스라인 약 55%에서 최근 약 20%로 떨어졌습니다. 전체 주문 수는 크게 안 줄어들어도, 그 구성이 재구매 고객 쪽으로 크게 이동합니다 — 획득 채널이나 캠페인, 또는 트래킹 이슈를 점검해야 할 신호입니다.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h4>증거 — Customer 화면</h4>
+          <p>신규/재구매 비중 차트가 두 기간 사이에 완전히 뒤집힌 걸 보여줍니다.</p>
+          <img src="screenshots/scenarios/customer_evidence.png" alt="Customer 탭에서 신규 고객 비중이 55%에서 20%로 떨어진 차트">
+          <div class="metric-pair">
+            <div class="metric-pill"><div class="label">신규 고객 비중</div><div class="val down">55% → 20% (-34.9pt)</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h4>시스템의 판단 — Decisions 카드</h4>
+          <p><code>new_share_pct_change ≤ -50%</code> 조건으로 high 심각도가 부여됐습니다.</p>
+          <img src="screenshots/scenarios/customer_decision.png" alt="New-customer acquisition share dropping sharply 결정 카드, high 심각도, 근거와 제안 조치 포함">
+          <div class="action-box">
+            <div class="label">제안 조치 · 모니터링 KPI</div>
+            획득 마케팅 지출/효율 재검토, 데이터·트래킹 이슈가 아닌지 확인 — 이후 <code>new_customer_share</code>를 계속 지켜봄.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <span class="eyebrow">03 · 대시보드가 아니라 의사결정 시스템</span>
+    <h2>조치 후에도 같은 로직이 다시 확인합니다</h2>
+    <p>"조치가 효과가 있었나?"는 별도 기능이 아닙니다. 이슈를 탐지한 것과 <b style="color:var(--text)">동일한 결정적 함수</b>가 더 최신 데이터에 대해 다시 실행될 뿐입니다. 재고가 회복되면 규칙이 더 이상 발동하지 않고, 이슈는 목록에서 조용히 사라집니다.</p>
+    <div class="verify-card">
+      <h3 style="margin-bottom:2px;">예시 — AUR-003 긴급 재입고 시뮬레이션</h3>
+      <p style="margin-bottom:0;">저장소의 자동화 테스트(<code>tests/test_decisions/test_post_action_verification.py</code>)가 실제로 검증하는 시나리오입니다.</p>
+      <div class="verify-compare">
+        <div class="verify-col before">
+          <div class="tag">조치 전</div>
+          <div class="num">days_of_cover = 2.9</div>
+          <div class="sub">on_hand 10 · stockout_risk = True → 이슈 발생</div>
+        </div>
+        <div class="verify-arrow">→</div>
+        <div class="verify-col after">
+          <div class="tag">긴급 재입고 후</div>
+          <div class="num">days_of_cover = 34.3</div>
+          <div class="sub">on_hand 120 · stockout_risk = False → 이슈 소멸</div>
+        </div>
+      </div>
+      <div class="code-note">같은 <code>detect_inventory_issues()</code> 함수를 두 상태에 각각 실행했을 뿐, 별도의 "검증 로직"은 존재하지 않습니다.</div>
+    </div>
+  </div>
+</section>
+
+<section class="tight" style="border-top:1px solid var(--border); background:var(--bg-elev);">
+  <div class="wrap">
+    <span class="eyebrow">04 · 줌아웃</span>
+    <h2>이걸 움직이는 인프라</h2>
+    <p>모든 컴포넌트는 명확한 이유가 있어서 존재합니다 — 화려함을 위한 게 아닙니다.</p>
+    <div class="mermaid">
+flowchart LR
+    subgraph Generate["로컬 / Cloud Run Job (예약 실행)"]
+        Gen[합성 데이터 생성기]
+    end
+    Gen --> GCSraw[("Cloud Storage: raw/날짜/*.csv")]
+    GCSraw --> BQraw[(BigQuery raw)]
+    BQraw --> BQstage[(BigQuery staging)]
+    BQstage --> BQmetrics[(BigQuery metrics)]
+    BQmetrics --> Rules[결정적 이슈 탐지 규칙]
+    Rules --> Gemini[Gemini 해석]
+    Rules --> Snap[app_snapshot.json]
+    Gemini --> Snap
+    Snap --> GCSsnap[("Cloud Storage snapshot")]
+    GCSsnap --> App[Cloud Run Streamlit 앱]
+    Sched[Cloud Scheduler: 매일] -.->|트리거| Gen
+    </div>
+    <div class="arch-list">
+      <div class="arch-row"><div class="comp">Cloud Storage</div><div class="why">원본 CSV의 집결지이자, 앱이 읽는 유일한 파일이 있는 곳 — 공개 앱을 BigQuery/Gemini와 완전히 분리합니다.</div></div>
+      <div class="arch-row"><div class="comp">BigQuery</div><div class="why">raw → staging → metrics. 모든 숫자의 결정적 근거(source of truth).</div></div>
+      <div class="arch-row"><div class="comp">결정 규칙 (Python)</div><div class="why">"무엇이 문제인지"는 AI가 아니라 임계값 기반 로직이 정합니다.</div></div>
+      <div class="arch-row"><div class="comp">Gemini</div><div class="why">이미 계산된 이슈를 문장으로 서술만 합니다. 사실이나 심각도를 바꿀 수 없습니다.</div></div>
+      <div class="arch-row"><div class="comp">Cloud Run + Scheduler</div><div class="why">앱 서빙과, 매일 실행되는 전체 리프레시 자동화.</div></div>
+    </div>
+    <p class="footnote">데이터 볼륨은 의도적으로 작고(주문 ~1,600건), Cloud Run은 유휴 시 스케일 투 제로라 실행 비용은 사실상 무료 티어 수준입니다. 임계값과 규칙은 심어놓은 시나리오를 탐지 가능하게 한 데모용 기본값이며 실제 리테일 벤치마크 튜닝은 아닙니다 — 자세한 내용은 저장소 README의 "한계" 섹션 참고.</p>
+  </div>
+</section>
+
+<section class="final-cta">
+  <div class="wrap">
+    <h2>이게 여러분 조직의 실제 데이터였다면</h2>
+    <p>이 데모는 합성 데이터로 만든 메커니즘 증명입니다. 같은 구조 — 결정적 메트릭, 근거 있는 이슈 탐지, 제한된 역할의 AI 해석 — 를 실제 데이터 소스에 연결하는 건 이미 검증된 패턴을 재사용하는 문제입니다.</p>
+    <div class="cta-row">
+      <a href="https://commerce-decision-app-6uj2ksurka-du.a.run.app" class="btn btn-primary" id="live-app-link" target="_blank" rel="noopener">라이브 앱 직접 둘러보기</a>
+      <a href="https://github.com/yimsemin/commerce-decision-demo" class="btn btn-secondary" target="_blank" rel="noopener">코드/문서 전체 보기</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  Commerce Decision Lab · 포트폴리오 목적의 데모이며 실제 회사/고객 데이터를 사용하지 않습니다.
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({ startOnLoad: true, theme: "dark" });
+
+  document.querySelectorAll(".scenario-tab").forEach((tab) => {
+    tab.addEventListener("click", () => {
+      document.querySelectorAll(".scenario-tab").forEach((t) => t.classList.remove("active"));
+      document.querySelectorAll(".scenario-panel").forEach((p) => p.classList.remove("active"));
+      tab.classList.add("active");
+      document.getElementById(tab.dataset.target).classList.add("active");
+    });
+  });
+
+  document.getElementById("theme-toggle").addEventListener("click", () => {
+    var current = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+    var next = current === "light" ? "dark" : "light";
+    document.documentElement.setAttribute("data-theme", next);
+    try { localStorage.setItem("theme", next); } catch (e) {}
+  });
+</script>
+
+</body>
+</html>

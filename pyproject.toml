@@ -1,0 +1,34 @@
+[project]
+name = "commerce-decision-demo"
+version = "0.1.0"
+description = "Portfolio sample: synthetic commerce data -> BigQuery metrics -> executive decision app -> Gemini interpretation"
+requires-python = ">=3.14"
+dependencies = [
+    "pandas>=3.0",
+    "numpy>=2.5",
+    "streamlit>=1.60",
+    "google-cloud-storage>=2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=9.0",
+]
+# Only the refresh/ingest job (M2/M6/M7) needs BigQuery/Gemini -- the app
+# container itself only reads the snapshot from GCS (google-cloud-storage,
+# a core dependency above), never queries BigQuery or Gemini directly.
+pipeline = [
+    "google-cloud-bigquery>=3",
+    "google-genai>=2",
+]
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

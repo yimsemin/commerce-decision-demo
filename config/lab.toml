@@ -1,0 +1,18 @@
+# Owner-editable settings, read by the refresh job (commerce_lab.lenses.settings).
+# Changes take effect on the next refresh. See docs/extending.md.
+
+[lenses]
+# Order = tab order. A name without a dot is a built-in lens
+# (commerce_lab.lenses.<name>); a dotted name is any importable module that
+# exposes a module-level `LENS`.
+enabled = ["sales", "marketing", "customer", "inventory"]
+
+# Override any lens parameter's default. Keys not listed keep the default
+# (see each lens module's `params=`). Unknown keys fail the refresh loudly.
+#
+# [params.marketing]
+# decline_high_pct = -35
+#
+# [params.inventory]
+# stockout_days = 10
+# velocity_window_days = 21
