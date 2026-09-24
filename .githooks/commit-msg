@@ -1,0 +1,32 @@
+#!/bin/sh
+# commit-msg hook -- enforced repo policy (see CLAUDE.md "Git"):
+#   1. No Claude/Anthropic AI-attribution trailers in commit messages, ever.
+#   2. Every commit summary must start with a conventional type prefix.
+#
+# Installed via: git config core.hooksPath .githooks (see CLAUDE.md).
+# This file is versioned so the rule travels with the repo to any clone
+# or machine, instead of living only in one local .git/hooks/ copy.
+
+MSG_FILE="$1"
+
+if grep -Eiq '(co-authored-by:.*(claude|anthropic)|generated with.*claude|claude code|anthropic\.com)' "$MSG_FILE"; then
+    echo "commit-msg: REJECTED -- commit message contains a Claude/Anthropic attribution trailer." >&2
+    echo "This repo's policy (CLAUDE.md) forbids AI attribution trailers in commits. Remove it and retry." >&2
+    exit 1
+fi
+
+FIRST_LINE=$(head -n1 "$MSG_FILE")
+case "$FIRST_LINE" in
+    "Merge "*|"Revert "*|"fixup!"*|"squash!"*)
+        exit 0
+        ;;
+esac
+
+if ! printf '%s\n' "$FIRST_LINE" | grep -Eq '^(feat|fix|docs?|chore|refactor|test|style|perf|build|ci)(\([a-zA-Z0-9._-]+\))?: .+'; then
+    echo "commit-msg: REJECTED -- summary line must start with a type prefix and colon," >&2
+    echo "e.g. 'feat: ...', 'fix: ...', 'docs: ...' (also: chore, refactor, test, style, perf, build, ci)." >&2
+    echo "Got: ${FIRST_LINE}" >&2
+    exit 1
+fi
+
+exit 0
