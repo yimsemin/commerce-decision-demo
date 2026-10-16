@@ -36,8 +36,14 @@ Thumbs.db
 # Editors
 .vscode/
 .idea/
-.claude/
 
 # Build artifacts
 dist/
 build/
+node_modules/
+coverage/
+.cache/
+!.env.example
+.claude/settings.local.json
+.claude/worktrees/
+*.log
