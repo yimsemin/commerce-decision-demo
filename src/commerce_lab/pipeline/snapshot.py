@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import datetime as dt
 import json
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import pandas as pd
@@ -30,6 +31,7 @@ HISTORY_SCHEMA_VERSION = 2  # shape of the build_snapshot_history() wrapper
 # comparison methodology.
 HISTORY_ANCHOR_COUNT: int | None = None
 HISTORY_SPACING_DAYS = 1
+WAREHOUSE_WORKERS = 8  # concurrent anchors when KPIs come from BigQuery
 
 
 def resolve_lenses(lenses: list[Lens] | None, settings: LabSettings | None) -> tuple[list[Lens], dict]:
@@ -115,10 +117,18 @@ def build_snapshot_history(
         as_of_dates = default_history_anchors(datasets, window_days=window_days)
 
     lenses, _ = resolve_lenses(lenses, settings)
-    snapshots = {
-        as_of.isoformat(): build_snapshot(datasets, window_days=window_days, as_of=as_of, lenses=lenses, settings=settings, warehouse=warehouse)
-        for as_of in as_of_dates
-    }
+
+    def one(as_of: dt.date) -> dict:
+        return build_snapshot(datasets, window_days=window_days, as_of=as_of, lenses=lenses, settings=settings, warehouse=warehouse)
+
+    if warehouse is not None:
+        # Each anchor is ~8 independent BigQuery queries; running anchors
+        # side by side keeps a daily refresh well inside the job timeout.
+        with ThreadPoolExecutor(max_workers=WAREHOUSE_WORKERS) as pool:
+            built = list(pool.map(one, as_of_dates))
+    else:
+        built = [one(as_of) for as_of in as_of_dates]
+    snapshots = {as_of.isoformat(): snap for as_of, snap in zip(as_of_dates, built)}
     available = sorted(snapshots.keys())
 
     return {
