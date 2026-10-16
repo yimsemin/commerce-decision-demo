@@ -53,4 +53,4 @@ def inventory_risk_by_sku(
         and (r["velocity"] == 0 or (r["days_of_cover"] is not None and r["days_of_cover"] > excess_threshold_days)),
         axis=1,
     )
-    return combined.sort_values("days_of_cover", na_position="first").reset_index(drop=True)
+    return combined.sort_values(["days_of_cover", "sku_id"], na_position="first").reset_index(drop=True)

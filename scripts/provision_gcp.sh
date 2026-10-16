@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Reproducible provisioning script (not Terraform/IaC by design -- see
-# PROGRESS.md decisions log) for the GCP resources this project needs:
+# docs/operations.md) for the GCP resources this project needs:
 #   - required APIs (Storage, BigQuery, Cloud Run, Cloud Build,
 #     Cloud Scheduler, Vertex AI, Artifact Registry)
 #   - one GCS bucket for data (raw synthetic-data + app snapshot) and

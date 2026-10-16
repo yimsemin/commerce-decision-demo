@@ -2,37 +2,35 @@
 -- Run via: bq query --use_legacy_sql=false --project_id=$GCP_PROJECT_ID < this file
 -- (dataset `metrics` and staging.orders/staging.customers must already exist)
 
-CREATE OR REPLACE VIEW metrics.customer_mix AS
-WITH bounds AS (
-  SELECT MAX(order_date) AS as_of FROM staging.orders
-),
-periods AS (
-  SELECT
-    as_of,
-    DATE_SUB(as_of, INTERVAL 29 DAY) AS current_start,
-    DATE_SUB(as_of, INTERVAL 30 DAY) AS previous_end,
-    DATE_SUB(as_of, INTERVAL 59 DAY) AS previous_start
-  FROM bounds
-),
-tagged AS (
-  SELECT
-    o.*,
-    CASE
-      WHEN o.order_date BETWEEN p.current_start AND p.as_of THEN 'current'
-      WHEN o.order_date BETWEEN p.previous_start AND p.previous_end THEN 'previous'
-    END AS period
-  FROM staging.orders o
-  CROSS JOIN periods p
-)
-SELECT
-  period,
-  AVG(CAST(is_new_customer AS INT64)) AS new_customer_share,
-  1 - AVG(CAST(is_new_customer AS INT64)) AS returning_customer_share
-FROM tagged
-WHERE period IS NOT NULL
-GROUP BY period;
+DROP VIEW IF EXISTS metrics.customer_mix;
 
--- Lifetime repeat purchase rate, as of the latest data (not period-scoped).
+-- One row: new-customer share of orders, current vs previous period.
+CREATE OR REPLACE TABLE FUNCTION metrics.customer_mix(as_of DATE, window_days INT64) AS (
+  WITH tagged AS (
+    SELECT
+      is_new_customer,
+      CASE
+        WHEN order_date BETWEEN DATE_SUB(as_of, INTERVAL window_days - 1 DAY) AND as_of THEN 'current'
+        WHEN order_date BETWEEN DATE_SUB(as_of, INTERVAL 2 * window_days - 1 DAY)
+                            AND DATE_SUB(as_of, INTERVAL window_days DAY) THEN 'previous'
+      END AS period
+    FROM staging.orders
+  ),
+  shares AS (
+    SELECT
+      ROUND(AVG(IF(period = 'current', CAST(is_new_customer AS INT64), NULL)), 3) AS current_new_share,
+      ROUND(AVG(IF(period = 'previous', CAST(is_new_customer AS INT64), NULL)), 3) AS previous_new_share
+    FROM tagged
+    WHERE period IS NOT NULL
+  )
+  SELECT
+    current_new_share, previous_new_share,
+    ROUND(1 - current_new_share, 3) AS current_returning_share,
+    ROUND(1 - previous_new_share, 3) AS previous_returning_share
+  FROM shares
+);
+
+-- Lifetime repeat purchase rate over all customers (not period-scoped).
 CREATE OR REPLACE VIEW metrics.repeat_purchase_rate AS
-SELECT AVG(CAST(is_returning AS INT64)) AS repeat_purchase_rate
+SELECT ROUND(AVG(CAST(is_returning AS INT64)), 3) AS repeat_purchase_rate
 FROM staging.customers;

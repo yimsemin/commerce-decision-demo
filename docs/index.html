@@ -59,12 +59,13 @@
   section { padding: 72px 0; }
   section.tight { padding: 48px 0; }
   h1, h2, h3 { line-height: 1.3; font-weight: 700; letter-spacing: -0.01em; }
+  code { font-size: 16px; }
   h2 { font-size: 28px; margin: 0 0 12px; }
   h3 { font-size: 18px; margin: 0 0 8px; }
   p { color: var(--text-dim); margin: 0 0 16px; }
   .eyebrow {
     display: inline-block;
-    font-size: 12px;
+    font-size: 16px;
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -90,7 +91,7 @@
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 20px 22px;
-    font-size: 15px;
+    font-size: 16px;
     color: var(--text);
   }
   .hero .hook b { color: var(--high); }
@@ -102,7 +103,7 @@
     padding: 11px 18px;
     border-radius: 10px;
     font-weight: 600;
-    font-size: 14px;
+    font-size: 16px;
     text-decoration: none;
     border: 1px solid transparent;
     cursor: pointer;
@@ -125,8 +126,8 @@
     padding: 14px 12px;
     text-align: center;
   }
-  .data-card .name { font-weight: 700; font-size: 13px; }
-  .data-card .desc { font-size: 12px; color: var(--text-faint); margin-top: 4px; }
+  .data-card .name { font-weight: 700; font-size: 16px; }
+  .data-card .desc { font-size: 16px; color: var(--text-faint); margin-top: 4px; }
 
   .flow-note {
     background: var(--card);
@@ -134,10 +135,16 @@
     border-radius: var(--radius);
     padding: 18px 20px;
     margin-top: 20px;
-    font-size: 14px;
+    font-size: 16px;
   }
-  .flow-note code { background: var(--bg-elev); padding: 1px 6px; border-radius: 5px; font-size: 12.5px; }
-  .mermaid { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; margin-top: 16px; }
+  .flow-note code { background: var(--bg-elev); padding: 1px 6px; border-radius: 5px; font-size: 16px; }
+  .flow { list-style: none; counter-reset: step; margin: 16px 0 0; padding: 0; display: grid; gap: 0; }
+  .flow li { counter-increment: step; position: relative; padding: 12px 0 12px 48px; border-left: 2px solid var(--border); margin-left: 16px; }
+  .flow li::before { content: counter(step); position: absolute; left: -17px; top: 12px; width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: #fff; font-weight: 700; display: grid; place-items: center; }
+  .flow li:last-child { border-left-color: transparent; }
+  .flow li b { display: block; }
+  .flow li span { display: block; color: var(--text-dim, var(--text-faint)); }
+  .flow code { background: var(--bg-elev); padding: 1px 6px; border-radius: 5px; }
 
   /* scenario picker */
   .scenario-tabs {
@@ -161,7 +168,7 @@
   .scenario-tab.active { border-color: var(--accent); background: var(--accent-soft); }
   .scenario-tab .sev {
     display: inline-block;
-    font-size: 10px;
+    font-size: 16px;
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: uppercase;
@@ -170,8 +177,8 @@
     margin-bottom: 8px;
   }
   .scenario-tab .sev.high { background: var(--high-soft); color: var(--high); }
-  .scenario-tab .title { font-size: 14px; font-weight: 700; }
-  .scenario-tab .sub { font-size: 12.5px; color: var(--text-faint); margin-top: 4px; }
+  .scenario-tab .title { font-size: 16px; font-weight: 700; }
+  .scenario-tab .sub { font-size: 16px; color: var(--text-faint); margin-top: 4px; }
 
   .scenario-panel { display: none; margin-top: 28px; }
   .scenario-panel.active { display: block; }
@@ -187,11 +194,11 @@
     background: var(--accent);
     color: #fff;
     display: flex; align-items: center; justify-content: center;
-    font-size: 13px; font-weight: 700;
+    font-size: 16px; font-weight: 700;
     flex-shrink: 0;
   }
-  .step-body h4 { margin: 2px 0 8px; font-size: 15px; }
-  .step-body p { margin-bottom: 10px; font-size: 14.5px; }
+  .step-body h4 { margin: 2px 0 8px; font-size: 16px; }
+  .step-body p { margin-bottom: 10px; font-size: 16px; }
   .step-body img {
     width: 100%;
     border-radius: 10px;
@@ -204,19 +211,19 @@
     border: 1px solid var(--border);
     border-radius: 10px;
     padding: 8px 14px;
-    font-size: 13px;
+    font-size: 16px;
   }
-  .metric-pill .label { color: var(--text-faint); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
-  .metric-pill .val { font-weight: 700; font-size: 15px; }
+  .metric-pill .label { color: var(--text-faint); font-size: 16px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .metric-pill .val { font-weight: 700; font-size: 16px; }
   .metric-pill .val.down { color: var(--high); }
   .action-box {
     background: var(--low-soft);
     border: 1px solid rgba(62,207,142,0.35);
     border-radius: 10px;
     padding: 14px 16px;
-    font-size: 14px;
+    font-size: 16px;
   }
-  .action-box .label { color: var(--low); font-weight: 700; font-size: 12px; text-transform: uppercase; margin-bottom: 4px; }
+  .action-box .label { color: var(--low); font-weight: 700; font-size: 16px; text-transform: uppercase; margin-bottom: 4px; }
 
   /* verification section */
   .verify-card {
@@ -230,13 +237,13 @@
   .verify-col { background: var(--bg-elev); border-radius: 10px; padding: 14px 16px; }
   .verify-col.before { border: 1px solid rgba(255,92,114,0.35); }
   .verify-col.after { border: 1px solid rgba(62,207,142,0.35); }
-  .verify-col .tag { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+  .verify-col .tag { font-size: 16px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
   .verify-col.before .tag { color: var(--high); }
   .verify-col.after .tag { color: var(--low); }
   .verify-col .num { font-size: 20px; font-weight: 700; margin: 6px 0 2px; }
-  .verify-col .sub { font-size: 12.5px; color: var(--text-faint); }
+  .verify-col .sub { font-size: 16px; color: var(--text-faint); }
   .verify-arrow { color: var(--text-faint); font-size: 20px; }
-  .code-note { font-size: 12.5px; color: var(--text-faint); margin-top: 14px; }
+  .code-note { font-size: 16px; color: var(--text-faint); margin-top: 14px; }
   .code-note code { background: var(--bg-elev); padding: 1px 6px; border-radius: 5px; }
 
   /* architecture */
@@ -249,13 +256,13 @@
     border: 1px solid var(--border);
     border-radius: 10px;
     padding: 12px 16px;
-    font-size: 13.5px;
+    font-size: 16px;
     align-items: center;
   }
   .arch-row .comp { font-weight: 700; }
   .arch-row .why { color: var(--text-dim); }
 
-  .footnote { font-size: 13px; color: var(--text-faint); margin-top: 20px; }
+  .footnote { font-size: 16px; color: var(--text-faint); margin-top: 20px; }
 
   .final-cta {
     text-align: center;
@@ -267,7 +274,7 @@
   .final-cta p { max-width: 520px; margin-left: auto; margin-right: auto; }
   .final-cta .cta-row { justify-content: center; margin-top: 24px; }
 
-  footer { text-align: center; padding: 32px 0; color: var(--text-faint); font-size: 12.5px; }
+  footer { text-align: center; padding: 32px 0; color: var(--text-faint); font-size: 16px; }
 
   .theme-toggle {
     position: fixed;
@@ -326,6 +333,7 @@
     <span class="eyebrow">GCP 포트폴리오 데모</span>
     <h1>Commerce Decision Lab</h1>
     <p class="lede">파편화된 합성 커머스 데이터를 경영 판단의 근거로 바꾸는 시스템. 화려한 대시보드가 아니라, 화면에 뜬 숫자 하나하나를 계산한 SQL까지 거슬러 올라갈 수 있는 <b style="color:var(--text)">추적 가능한 의사결정 시스템</b>을 보여줍니다.</p>
+    <p class="lede">이 페이지의 수치와 스크린샷은 캡처 시점의 예시 데이터입니다. 라이브 앱은 매일 새 랜덤 데이터로 갱신되어 값은 달라지지만, 심어둔 4개 이슈는 같은 유형·같은 high 심각도로 나타납니다.</p>
     <div class="hook">
       여러 브랜드·채널·유료 마케팅을 운영하는 회사에서, 이번 달 매출이 흔들렸습니다. <b>원인이 무엇인지 답하는 데 며칠이 걸린다면?</b> 이 데모는 그 질문에 몇 초 만에, 근거를 붙여서 답하는 시스템입니다.
     </div>
@@ -554,23 +562,17 @@
     <span class="eyebrow">04 · 줌아웃</span>
     <h2>이걸 움직이는 인프라</h2>
     <p>모든 컴포넌트는 명확한 이유가 있어서 존재합니다 — 화려함을 위한 게 아닙니다.</p>
-    <div class="mermaid">
-flowchart LR
-    subgraph Generate["로컬 / Cloud Run Job (예약 실행)"]
-        Gen[합성 데이터 생성기]
-    end
-    Gen --> GCSraw[("Cloud Storage: raw/날짜/*.csv")]
-    GCSraw --> BQraw[(BigQuery raw)]
-    BQraw --> BQstage[(BigQuery staging)]
-    BQstage --> BQmetrics[(BigQuery metrics)]
-    BQmetrics --> Rules[결정적 이슈 탐지 규칙]
-    Rules --> Gemini[Gemini 해석]
-    Rules --> Snap[app_snapshot.json]
-    Gemini --> Snap
-    Snap --> GCSsnap[("Cloud Storage snapshot")]
-    GCSsnap --> App[Cloud Run Streamlit 앱]
-    Sched[Cloud Scheduler: 매일] -.->|트리거| Gen
-    </div>
+    <ol class="flow">
+      <li><b>Cloud Scheduler → Cloud Run Job</b><span>매일 06:00(KST)에 전체 리프레시를 시작합니다.</span></li>
+      <li><b>합성 데이터 생성기</b><span>실행마다 새 랜덤 시드로 주문·마케팅·재고·고객 CSV를 만듭니다.</span></li>
+      <li><b>Cloud Storage <code>raw/날짜/</code></b><span>원본 CSV와 시드를 날짜별로 보관합니다.</span></li>
+      <li><b>BigQuery <code>raw</code> → <code>staging</code></b><span>CSV를 그대로 적재하고, 타입을 지정한 얇은 뷰로 정리합니다.</span></li>
+      <li><b>BigQuery <code>metrics</code></b><span>SQL 함수가 기준일마다 현재-대-이전 KPI를 계산합니다.</span></li>
+      <li><b>결정적 이슈 탐지 규칙</b><span>임계값 기반 규칙이 이슈와 심각도를 정합니다.</span></li>
+      <li><b>Gemini 해석</b><span>계산된 이슈를 문장으로 서술만 합니다.</span></li>
+      <li><b>Cloud Storage <code>snapshot</code></b><span><code>app_snapshot.json</code> 한 파일로 묶어 저장합니다.</span></li>
+      <li><b>Cloud Run 앱 (Streamlit)</b><span>스냅샷만 읽어 보여줍니다. BigQuery와 Gemini를 직접 호출하지 않습니다.</span></li>
+    </ol>
     <div class="arch-list">
       <div class="arch-row"><div class="comp">Cloud Storage</div><div class="why">원본 CSV의 집결지이자, 앱이 읽는 유일한 파일이 있는 곳 — 공개 앱을 BigQuery/Gemini와 완전히 분리합니다.</div></div>
       <div class="arch-row"><div class="comp">BigQuery</div><div class="why">raw → staging → metrics. 모든 숫자의 결정적 근거(source of truth).</div></div>
@@ -597,10 +599,7 @@ flowchart LR
   Commerce Decision Lab · 포트폴리오 목적의 데모이며 실제 회사/고객 데이터를 사용하지 않습니다.
 </footer>
 
-<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
 <script>
-  mermaid.initialize({ startOnLoad: true, theme: "dark" });
-
   document.querySelectorAll(".scenario-tab").forEach((tab) => {
     tab.addEventListener("click", () => {
       document.querySelectorAll(".scenario-tab").forEach((t) => t.classList.remove("active"));

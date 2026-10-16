@@ -61,5 +61,7 @@ def sales_by_segment(orders: pd.DataFrame, window: PeriodWindow, group_cols: lis
     combined["pct_change"] = combined.apply(
         lambda r: _pct_change(r["current_net_revenue"], r["previous_net_revenue"]), axis=1
     )
-    combined = combined.sort_values("change", key=lambda s: s.abs(), ascending=False).reset_index(drop=True)
+    combined["_abs_change"] = combined["change"].abs()
+    combined = combined.sort_values(["_abs_change", *group_cols], ascending=[False] + [True] * len(group_cols))
+    combined = combined.drop(columns="_abs_change").reset_index(drop=True)
     return combined

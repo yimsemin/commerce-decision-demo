@@ -1,5 +1,5 @@
 """Runs the actual Streamlit script in-process (streamlit.testing.v1) so
-the app is genuinely executed, not just imported. Verifies PROJECT.md
+the app is genuinely executed, not just imported. Verifies docs/PROJECT.md
 §13's "application starts locally" without needing a browser.
 """
 

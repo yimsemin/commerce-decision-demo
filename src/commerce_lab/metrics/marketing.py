@@ -9,7 +9,7 @@ Formulas (see docs/kpi_definitions.md):
 CAC is computed at the marketing-channel grain only (not brand x channel):
 the synthetic customer model assigns `acquisition_channel` per customer,
 independent of brand, so a brand-level CAC split would not be a defensible
-calculation from this data (PROJECT.md §6 explicitly scopes CAC to "where
+calculation from this data (docs/PROJECT.md §6 explicitly scopes CAC to "where
 the synthetic model supports a defensible calculation").
 """
 
@@ -44,7 +44,7 @@ def marketing_by_segment(marketing: pd.DataFrame, window: PeriodWindow, group_co
     combined["roas_change_pct"] = combined.apply(
         lambda r: _pct_change(r["current_roas"], r["previous_roas"]), axis=1
     )
-    combined = combined.sort_values("roas_change_pct", ascending=True, na_position="last").reset_index(drop=True)
+    combined = combined.sort_values(["roas_change_pct", *group_cols], ascending=True, na_position="last").reset_index(drop=True)
     return combined
 
 

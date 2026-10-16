@@ -20,6 +20,13 @@ def compute(datasets, window, params) -> dict:
     }
 
 
+def compute_warehouse(warehouse, window, params) -> dict:
+    return {
+        "by_segment": warehouse.call("marketing_by_segment", window, order_by="roas_change_pct ASC NULLS LAST, brand, marketing_channel"),
+        "cac_by_channel": warehouse.call("cac_by_channel", window, order_by="marketing_channel"),
+    }
+
+
 def detect(section: dict, params: dict) -> list[DecisionItem]:
     issues: list[DecisionItem] = []
     for _, row in pd.DataFrame(section["by_segment"]).iterrows():
@@ -124,6 +131,7 @@ LENS = Lens(
     id="marketing",
     title={"ko": "마케팅", "en": "Marketing"},
     compute=compute,
+    compute_warehouse=compute_warehouse,
     detect=detect,
     params=(
         Param("decline_high_pct", -40.0, {"ko": "ROAS 변화율 ≤ 이 값이면 high (%)", "en": "ROAS change ≤ this: high (%)"}, -90.0, -5.0, 1.0),

@@ -62,3 +62,28 @@ def test_upload_snapshot_uses_fixed_private_path(tmp_path):
 
     assert uri == "gs://demo-bucket/snapshot/app_snapshot.json"
     assert client.uploads == [("snapshot/app_snapshot.json", str(snapshot_file))]
+
+
+def test_upload_seed_writes_the_seed_next_to_the_days_csvs():
+    from commerce_lab.pipeline.gcs import upload_seed
+
+    written = {}
+
+    class Blob:
+        def __init__(self, path):
+            self.path = path
+
+        def upload_from_string(self, text):
+            written[self.path] = text
+
+    class Bucket:
+        def blob(self, path):
+            return Blob(path)
+
+    class Client:
+        def bucket(self, name):
+            return Bucket()
+
+    uri = upload_seed(Client(), "b", "commerce", "2026-10-16", 123)
+    assert uri == "gs://b/raw/commerce/2026-10-16/seed.txt"
+    assert written == {"raw/commerce/2026-10-16/seed.txt": "123\n"}

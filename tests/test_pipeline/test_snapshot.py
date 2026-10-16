@@ -103,3 +103,10 @@ def test_build_snapshot_history_shape_and_latest_entry(datasets):
 
     text = json.dumps(history)  # must stay JSON-serializable (no NaN/numpy leaking through)
     assert json.loads(text)["latest_as_of_date"] == history["latest_as_of_date"]
+
+
+def test_history_records_the_data_seed_and_where_each_lens_was_computed(datasets):
+    history = build_snapshot_history(datasets, data_seed=99)
+    assert history["data_seed"] == 99
+    latest = history["snapshots"][history["latest_as_of_date"]]
+    assert latest["metrics_source"] == {lens: "pandas" for lens in latest["lenses"]}

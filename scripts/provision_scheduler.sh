@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Builds the refresh-job image, creates/updates a Cloud Run Job, and
-# wires a Cloud Scheduler job to trigger it daily -- the PROJECT.md §10
+# wires a Cloud Scheduler job to trigger it daily -- the docs/PROJECT.md §10
 # "Cloud Scheduler -> scheduled refresh" automation. Idempotent (checks
 # for existing resources before creating). Never invoked automatically;
 # the owner runs this once GCP project/billing/auth are available, after
@@ -14,7 +14,7 @@
 # the Cloud Scheduler's caller identity. Reusing one dedicated SA for
 # both purposes -- not the project's broad default Compute Engine SA --
 # is the pattern Google's own Cloud Run Jobs + Scheduler tutorials use;
-# see PROGRESS.md for the write-up of why the default SA was rejected.
+# see docs/operations.md (service accounts).
 #
 # Builds via a Cloud Build config file (cloudbuild.job.yaml), not the
 # `--tag`/`--dockerfile` shortcut: this gcloud version has no

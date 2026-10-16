@@ -19,6 +19,10 @@ class PeriodWindow:
     previous_start: dt.date
     previous_end: dt.date
 
+    @property
+    def days(self) -> int:
+        return (self.current_end - self.current_start).days + 1
+
     def in_current(self, date_series):
         return (date_series >= self.current_start.isoformat()) & (
             date_series <= self.current_end.isoformat()

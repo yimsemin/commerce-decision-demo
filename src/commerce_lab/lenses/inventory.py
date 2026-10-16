@@ -24,6 +24,13 @@ def compute(datasets, window: PeriodWindow, params) -> dict:
     return {"risk_by_sku": records(risk)}
 
 
+def compute_warehouse(warehouse, window: PeriodWindow, params) -> dict:
+    rows = warehouse.call_inventory(
+        window, int(params["velocity_window_days"]), params["stockout_days"], params["excess_days"]
+    )
+    return {"risk_by_sku": rows}
+
+
 def flag_risks(risk_by_sku: list[dict], params: dict) -> pd.DataFrame:
     """The per-SKU stock-out/excess flags under `params`. Recomputed from
     days-of-cover/velocity rather than read from the stored flags, so the
@@ -145,6 +152,7 @@ LENS = Lens(
     id="inventory",
     title={"ko": "재고", "en": "Inventory"},
     compute=compute,
+    compute_warehouse=compute_warehouse,
     detect=detect,
     params=(
         Param("stockout_days", 7.0, {"ko": "재고 소진 일수 < 이 값이면 품절 위험 (일)", "en": "Days of cover < this: stock-out risk (days)"}, 1.0, 30.0, 1.0),

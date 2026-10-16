@@ -24,21 +24,12 @@
 #   GCP_PROJECT_ID=my-project GCS_BUCKET=my-project-commerce-lab \
 #     ./scripts/deploy_app.sh
 #
-# Public access note: `--allow-unauthenticated` below requests a public,
-# no-login URL for later (this is a demo with only synthetic data -- see
-# PROGRESS.md decisions log). As of this writing the app is
-# intentionally kept authenticated-only; public access is a deliberate
-# future step, not a bug. Some Google Workspace/Cloud orgs also enforce
-# a domain-restricted-sharing org policy that blocks granting access to
-# "allUsers" outright; `gcloud run deploy` still succeeds in that case,
-# it just can't apply the public IAM binding (a warning, not a failure).
-# Either way, the service is reachable by identities with
-# roles/run.invoker in the meantime, e.g.:
-#   TOKEN=$(gcloud auth print-identity-token)
-#   curl -H "Authorization: Bearer $TOKEN" <service-url>
-# If an org policy is what's blocking it, changing
-# iam.allowedPolicyMemberDomains is an organization-level security
-# decision -- ask the owner before touching it (see PROGRESS.md).
+# Public access: `--allow-unauthenticated` below requests a public, no-login
+# URL (a demo with only synthetic data). If the hosting org enforces a
+# domain-restricted-sharing policy, `gcloud run deploy` still succeeds but
+# cannot apply the `allUsers` binding (a warning, not a failure); changing
+# that policy is an organization-level security decision -- ask the owner.
+# docs/operations.md ("앱 공개 접근 설정") has the project-scoped procedure.
 
 set -euo pipefail
 

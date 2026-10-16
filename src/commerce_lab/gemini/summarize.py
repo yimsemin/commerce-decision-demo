@@ -2,7 +2,7 @@
 a Gemini failure (missing credentials, quota, network, model change)
 degrades to `gemini_summary: None`, and the app falls back to the
 deterministic summary already built in `commerce_lab.app.view_helpers`
-(PROJECT.md's Definition of Done requires the app to work even when the
+(docs/PROJECT.md's Definition of Done requires the app to work even when the
 AI layer is unavailable; Gemini is an interpretation layer, not a
 dependency of the facts themselves).
 """
