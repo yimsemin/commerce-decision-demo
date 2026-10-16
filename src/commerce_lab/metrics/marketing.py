@@ -44,7 +44,7 @@ def marketing_by_segment(marketing: pd.DataFrame, window: PeriodWindow, group_co
     combined["roas_change_pct"] = combined.apply(
         lambda r: _pct_change(r["current_roas"], r["previous_roas"]), axis=1
     )
-    combined = combined.sort_values("roas_change_pct", ascending=True, na_position="last").reset_index(drop=True)
+    combined = combined.sort_values(["roas_change_pct", *group_cols], ascending=True, na_position="last").reset_index(drop=True)
     return combined
 
 

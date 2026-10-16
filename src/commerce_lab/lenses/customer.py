@@ -19,6 +19,13 @@ def compute(datasets, window, params) -> dict:
     }
 
 
+def compute_warehouse(warehouse, window, params) -> dict:
+    return {
+        "mix": warehouse.call("customer_mix", window)[0],
+        "repeat_purchase_rate": warehouse.view("repeat_purchase_rate")[0]["repeat_purchase_rate"],
+    }
+
+
 def detect(section: dict, params: dict) -> list[DecisionItem]:
     mix = section["mix"]
     current, previous = mix["current_new_share"], mix["previous_new_share"]
@@ -98,6 +105,7 @@ LENS = Lens(
     id="customer",
     title={"ko": "고객", "en": "Customer"},
     compute=compute,
+    compute_warehouse=compute_warehouse,
     detect=detect,
     params=(
         Param("new_share_drop_high_pct", -50.0, {"ko": "신규 고객 비중 변화율 ≤ 이 값이면 high (%)", "en": "New-customer share change ≤ this: high (%)"}, -90.0, -5.0, 1.0),

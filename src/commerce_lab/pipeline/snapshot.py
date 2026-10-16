@@ -13,7 +13,7 @@ from pathlib import Path
 import pandas as pd
 
 from ..lenses.base import Lens
-from ..lenses.registry import compute_sections, load_lenses, run_detection
+from ..lenses.registry import compute_sections, load_lenses, metrics_source, run_detection
 from ..lenses.settings import LabSettings, load_settings
 from ..metrics.periods import PeriodWindow, compute_period_window, latest_date
 from .serialize import to_json_safe
@@ -41,15 +41,18 @@ def build_snapshot(
     as_of: dt.date | None = None,
     lenses: list[Lens] | None = None,
     settings: LabSettings | None = None,
+    warehouse=None,
 ) -> dict:
     """One as-of snapshot. `lenses` defaults to those enabled in
-    `config/lab.toml`; `settings.params` overrides lens parameter defaults."""
+    `config/lab.toml`; `settings.params` overrides lens parameter defaults.
+    With a `warehouse` (BigQuery), the KPIs come from the `metrics` SQL
+    functions instead of pandas; `metrics_source` records which."""
     lenses, param_overrides = resolve_lenses(lenses, settings)
     if as_of is None:
         as_of = latest_date(datasets["orders"]["order_date"], datasets["marketing"]["date"], datasets["inventory"]["date"])
     window: PeriodWindow = compute_period_window(as_of, window_days=window_days)
 
-    sections, params = compute_sections(lenses, datasets, window, param_overrides)
+    sections, params = compute_sections(lenses, datasets, window, param_overrides, warehouse=warehouse)
     decisions = run_detection(lenses, sections, params)
 
     return {
@@ -63,6 +66,7 @@ def build_snapshot(
             "previous_end": window.previous_end.isoformat(),
         },
         "lenses": [lens.id for lens in lenses],
+        "metrics_source": {lens.id: metrics_source(lens, warehouse) for lens in lenses},
         "params": params,
         **sections,
         "decisions": [to_json_safe(d.to_dict()) for d in decisions],
@@ -98,6 +102,8 @@ def build_snapshot_history(
     window_days: int = 30,
     lenses: list[Lens] | None = None,
     settings: LabSettings | None = None,
+    warehouse=None,
+    data_seed: int | None = None,
 ) -> dict:
     """Precomputes one `build_snapshot()` per as-of anchor so the app can
     offer a comparison-period selector while still only ever reading a
@@ -108,7 +114,7 @@ def build_snapshot_history(
 
     lenses, _ = resolve_lenses(lenses, settings)
     snapshots = {
-        as_of.isoformat(): build_snapshot(datasets, window_days=window_days, as_of=as_of, lenses=lenses, settings=settings)
+        as_of.isoformat(): build_snapshot(datasets, window_days=window_days, as_of=as_of, lenses=lenses, settings=settings, warehouse=warehouse)
         for as_of in as_of_dates
     }
     available = sorted(snapshots.keys())
@@ -116,6 +122,7 @@ def build_snapshot_history(
     return {
         "schema_version": HISTORY_SCHEMA_VERSION,
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
+        "data_seed": data_seed,
         "available_as_of_dates": available,
         "latest_as_of_date": available[-1],
         "snapshots": snapshots,

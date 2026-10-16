@@ -95,11 +95,23 @@ def compute_sections(
     datasets: dict[str, pd.DataFrame],
     window: PeriodWindow,
     params: dict[str, dict] | None = None,
+    warehouse=None,
 ) -> tuple[dict[str, dict], dict[str, dict]]:
-    """(sections, resolved_params), both keyed by lens id."""
+    """(sections, resolved_params), both keyed by lens id. With a
+    `warehouse`, every lens that has `compute_warehouse` is computed by the
+    BigQuery metrics functions; the rest fall back to pandas."""
     resolved = {lens.id: resolve_params(lens, (params or {}).get(lens.id)) for lens in lenses}
-    sections = {lens.id: lens.compute(datasets, window, resolved[lens.id]) for lens in lenses}
+    sections = {}
+    for lens in lenses:
+        if warehouse is not None and lens.compute_warehouse is not None:
+            sections[lens.id] = lens.compute_warehouse(warehouse, window, resolved[lens.id])
+        else:
+            sections[lens.id] = lens.compute(datasets, window, resolved[lens.id])
     return sections, resolved
+
+
+def metrics_source(lens: Lens, warehouse) -> str:
+    return "bigquery" if warehouse is not None and lens.compute_warehouse is not None else "pandas"
 
 
 def run_detection(lenses: list[Lens], sections: dict[str, dict], params: dict[str, dict]) -> list[DecisionItem]:

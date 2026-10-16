@@ -4,6 +4,9 @@ lives in one module that exposes a `Lens`:
 
 - `data_sources` -- extra raw datasets it needs (optional)
 - `compute`      -- (datasets, window, params) -> its section of the snapshot
+- `compute_warehouse` -- same section computed by the BigQuery `metrics`
+                  functions (optional; without it the lens always uses
+                  `compute`, i.e. pandas)
 - `detect`       -- (section, params) -> deterministic `DecisionItem`s
 - `params`       -- the tunable thresholds (config file + app inputs)
 - `render`       -- its app tab (optional; Streamlit imported lazily)
@@ -27,6 +30,7 @@ import pandas as pd
 
 from ..decisions.models import DecisionItem
 from ..metrics.periods import PeriodWindow
+from ..metrics.warehouse import Warehouse
 
 
 @dataclass(frozen=True)
@@ -71,6 +75,7 @@ class Lens:
     title: dict[str, str]
     compute: Callable[[dict[str, pd.DataFrame], PeriodWindow, dict], dict]
     detect: Callable[[dict, dict], list[DecisionItem]]
+    compute_warehouse: Callable[[Warehouse, PeriodWindow, dict], dict] | None = None  # (warehouse, window, params)
     params: tuple[Param, ...] = ()
     data_sources: tuple[DataSource, ...] = ()
     render: Callable[[dict, str, dict], None] | None = None  # (section, lang, params)

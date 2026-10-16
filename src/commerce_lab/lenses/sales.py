@@ -22,6 +22,20 @@ def compute(datasets, window, params) -> dict:
     }
 
 
+def compute_warehouse(warehouse, window, params) -> dict:
+    row = warehouse.call("sales_summary", window)[0]
+    kpis = ("net_revenue", "orders", "units_sold", "aov")
+    return {
+        "summary": {
+            "current": {k: row[f"current_{k}"] for k in kpis},
+            "previous": {k: row[f"previous_{k}"] for k in kpis},
+            "pct_change": {k: row[f"pct_{k}"] for k in kpis},
+        },
+        "by_brand_channel": warehouse.call("sales_by_brand_channel", window, order_by="ABS(change) DESC, brand, channel"),
+        "by_sku": warehouse.call("sales_by_sku", window, order_by="ABS(change) DESC, sku_id, brand"),
+    }
+
+
 def detect(section: dict, params: dict) -> list[DecisionItem]:
     issues: list[DecisionItem] = []
     for _, row in pd.DataFrame(section["by_brand_channel"]).iterrows():
@@ -117,6 +131,7 @@ LENS = Lens(
     id="sales",
     title={"ko": "성과", "en": "Performance"},
     compute=compute,
+    compute_warehouse=compute_warehouse,
     detect=detect,
     params=(
         Param("decline_high_pct", -35.0, {"ko": "매출 변화율 ≤ 이 값이면 high (%)", "en": "Sales change ≤ this: high (%)"}, -90.0, -5.0, 1.0),

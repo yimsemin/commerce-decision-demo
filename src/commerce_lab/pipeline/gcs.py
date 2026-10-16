@@ -49,3 +49,11 @@ def upload_dataset(client, bucket_name: str, local_dir: Path, dataset_name: str,
         blob.upload_from_filename(str(csv_path))
         uploaded_uris.append(f"gs://{bucket_name}/{path}")
     return uploaded_uris
+
+
+def upload_seed(client, bucket_name: str, dataset_name: str, run_date: str, seed: int) -> str:
+    """Record the generator seed next to the day's CSVs, so any archived
+    day can be regenerated exactly (`--seed N`)."""
+    path = f"raw/{dataset_name}/{run_date}/seed.txt"
+    client.bucket(bucket_name).blob(path).upload_from_string(f"{seed}\n")
+    return f"gs://{bucket_name}/{path}"

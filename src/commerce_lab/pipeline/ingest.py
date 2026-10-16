@@ -18,11 +18,11 @@ import datetime as dt
 from pathlib import Path
 
 from .config import GcpConfig
-from .gcs import upload_dataset
+from .gcs import upload_dataset, upload_seed
 from .bigquery import ensure_extra_raw_tables, load_all_raw_tables
 
 
-def run_ingest(data_dir: Path, run_date: str | None = None, data_sources=()) -> list[str]:
+def run_ingest(data_dir: Path, run_date: str | None = None, data_sources=(), seed: int | None = None) -> list[str]:
     """Upload `data_dir`'s CSVs to GCS and load them into the raw BigQuery
     dataset. Returns the list of GCS URIs written. Raises if required GCP
     env vars are unset -- this function performs live GCP calls."""
@@ -45,6 +45,8 @@ def run_ingest(data_dir: Path, run_date: str | None = None, data_sources=()) -> 
         bigquery.LoadJobConfig,
         bigquery.SourceFormat.CSV,
     )
+    if seed is not None:  # after the load: only the CSVs are table sources
+        uris.append(upload_seed(storage_client, cfg.bucket, "commerce", run_date, seed))
     return uris
 
 
