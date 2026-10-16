@@ -21,13 +21,15 @@ from .serialize import to_json_safe
 SNAPSHOT_SCHEMA_VERSION = 2  # 2: adds `lenses` + `params` + per-decision `lens`; lens sections keep their v1 shape
 HISTORY_SCHEMA_VERSION = 2  # shape of the build_snapshot_history() wrapper
 
-# How many historical as-of points to precompute so the app can offer a
-# comparison-period selector without ever querying BigQuery live. Anchors
-# are spaced `HISTORY_SPACING_DAYS` apart, most recent last, and each still
-# uses a `window_days`-vs-`window_days` current/previous comparison -- only
-# the current period's *end* moves, not the comparison methodology.
-HISTORY_ANCHOR_COUNT = 5
-HISTORY_SPACING_DAYS = 15
+# Which historical as-of points to precompute so the app can offer a
+# comparison-period selector without ever querying BigQuery live. By
+# default every day that still has a full `window_days`-vs-`window_days`
+# comparison behind it is an anchor (`HISTORY_ANCHOR_COUNT = None` means
+# "as many as the data supports"), spaced `HISTORY_SPACING_DAYS` apart,
+# most recent last. Only the current period's *end* moves, not the
+# comparison methodology.
+HISTORY_ANCHOR_COUNT: int | None = None
+HISTORY_SPACING_DAYS = 1
 
 
 def resolve_lenses(lenses: list[Lens] | None, settings: LabSettings | None) -> tuple[list[Lens], dict]:
@@ -77,11 +79,11 @@ def build_snapshot(
 def default_history_anchors(
     datasets: dict[str, pd.DataFrame],
     window_days: int = 30,
-    count: int = HISTORY_ANCHOR_COUNT,
+    count: int | None = HISTORY_ANCHOR_COUNT,
     spacing_days: int = HISTORY_SPACING_DAYS,
 ) -> list[dt.date]:
-    """The latest date in the data, plus `count - 1` earlier anchors spaced
-    `spacing_days` apart -- as far back as the data can still support a full
+    """The latest date in the data, plus earlier anchors (at most `count`
+    in total, unlimited when None) spaced `spacing_days` apart -- as far back as the data can still support a full
     current-vs-previous `window_days` comparison. Ascending order (oldest
     first, latest last)."""
     latest = latest_date(datasets["orders"]["order_date"], datasets["marketing"]["date"], datasets["inventory"]["date"])
@@ -90,7 +92,7 @@ def default_history_anchors(
 
     anchors = []
     candidate = latest
-    while len(anchors) < count and candidate >= min_as_of:
+    while (count is None or len(anchors) < count) and candidate >= min_as_of:
         anchors.append(candidate)
         candidate = candidate - dt.timedelta(days=spacing_days)
     return sorted(anchors)

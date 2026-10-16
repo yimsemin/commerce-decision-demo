@@ -9,6 +9,8 @@ page load). Run locally with:
 
 from __future__ import annotations
 
+import datetime as dt
+
 import pandas as pd
 import streamlit as st
 
@@ -19,6 +21,7 @@ from commerce_lab.app.view_helpers import (
     fallback_executive_summary,
     format_currency,
     kpi_trend,
+    resolve_anchor,
     severity_counts,
     top_issues,
 )
@@ -182,12 +185,15 @@ def main() -> None:
     )
 
     available_dates = history["available_as_of_dates"]
-    selected_date = st.sidebar.select_slider(
+    first_date, latest_date = dt.date.fromisoformat(available_dates[0]), dt.date.fromisoformat(history["latest_as_of_date"])
+    picked = st.sidebar.date_input(
         t("period.selector_label", lang),
-        options=available_dates,
-        value=st.session_state.get("as_of", history["latest_as_of_date"]),
+        value=latest_date,
+        min_value=first_date,
+        max_value=latest_date,
         key="as_of",
     )
+    selected_date = resolve_anchor(available_dates, picked.isoformat())
     snapshot = history["snapshots"][selected_date]
 
     lenses = load_lenses(snapshot.get("lenses") or BUILTIN_LENS_NAMES)

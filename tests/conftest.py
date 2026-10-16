@@ -1,6 +1,12 @@
 from __future__ import annotations
 
+import os
+
 import pytest
+
+# Pin the rolling window before any commerce_lab import reads it, so tests are
+# independent of the day they run.
+os.environ.setdefault("COMMERCE_END_DATE", "2026-09-21")
 
 from commerce_lab.datagen.generator import generate_all
 from commerce_lab.metrics.periods import compute_period_window, latest_date
