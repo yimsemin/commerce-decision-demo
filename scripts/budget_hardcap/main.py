@@ -23,6 +23,7 @@ import base64
 import json
 import logging
 import os
+import sys
 
 import google.auth
 import google.auth.transport.requests
@@ -30,7 +31,13 @@ import google.auth.transport.requests
 PROJECT_ID = os.environ["GCP_PROJECT_ID"]
 BILLING_INFO_URL = f"https://cloudbilling.googleapis.com/v1/projects/{PROJECT_ID}/billingInfo"
 
-logging.basicConfig(level=logging.INFO)
+# The functions framework has already configured the root logger, which
+# makes logging.basicConfig a no-op -- so INFO lines (the spend figures)
+# never reached Cloud Logging. A dedicated stdout handler always does.
+log = logging.getLogger("budget-hardcap")
+log.setLevel(logging.INFO)
+log.propagate = False
+log.addHandler(logging.StreamHandler(sys.stdout))
 
 _credentials, _ = google.auth.default(
     scopes=["https://www.googleapis.com/auth/cloud-billing"]
@@ -49,7 +56,7 @@ def stop_billing(event, context):
     budget_amount = data.get("budgetAmount", 0)
     display_name = data.get("budgetDisplayName", "<unknown>")
 
-    logging.info(
+    log.info(
         "Budget alert: %s cost=%s budget=%s",
         display_name,
         cost_amount,
@@ -57,16 +64,16 @@ def stop_billing(event, context):
     )
 
     if budget_amount <= 0 or cost_amount < budget_amount:
-        logging.info("Under budget, no action.")
+        log.info("Under budget, no action.")
         return
 
     info = _session.get(BILLING_INFO_URL)
     info.raise_for_status()
     if not info.json().get("billingEnabled", False):
-        logging.info("Billing already disabled on %s, no action.", PROJECT_ID)
+        log.info("Billing already disabled on %s, no action.", PROJECT_ID)
         return
 
-    logging.warning(
+    log.warning(
         "Spend %s reached/exceeded budget %s -- disabling billing on %s",
         cost_amount,
         budget_amount,
@@ -74,7 +81,7 @@ def stop_billing(event, context):
     )
     resp = _session.put(BILLING_INFO_URL, json={"billingAccountName": ""})
     resp.raise_for_status()
-    logging.warning(
+    log.warning(
         "Billing disabled on %s. All billable resources will stop serving "
         "until an owner manually re-links a billing account in the console.",
         PROJECT_ID,

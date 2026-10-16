@@ -136,7 +136,8 @@ gcloud functions deploy "${FUNCTION_NAME}" \
     --set-env-vars="GCP_PROJECT_ID=${GCP_PROJECT_ID}" \
     --memory=256Mi \
     --timeout=60s \
-    --max-instances=1 \
+    --max-instances=5 \
+    --retry \
     --no-allow-unauthenticated
 
 # The gcf-artifacts repo and gcf-v2-sources-* bucket only exist after the
@@ -165,7 +166,8 @@ if ! gcloud functions describe "${FUNCTION_NAME}" --region="${GCP_REGION}" --pro
         --set-env-vars="GCP_PROJECT_ID=${GCP_PROJECT_ID}" \
         --memory=256Mi \
         --timeout=60s \
-        --max-instances=1 \
+        --max-instances=5 \
+    --retry \
         --no-allow-unauthenticated
 fi
 
