@@ -1,7 +1,7 @@
 """The structured decision-item shape used by every rule in
 `commerce_lab.decisions.rules`.
 
-Per PROJECT.md §7: a decision item states the issue, the supporting
+Per docs/PROJECT.md §7: a decision item states the issue, the supporting
 fact/KPI, likely driver(s), the affected brand/channel/SKU, a severity
 computed by a deterministic rule, a possible action, and the KPI to watch
 afterward. Gemini (M6) may narrate this structure but never invents its

@@ -1,6 +1,6 @@
 """Customer summary derivation.
 
-Per `PROJECT.md`, customer behavior is derived from commerce data rather
+Per `docs/PROJECT.md`, customer behavior is derived from commerce data rather
 than generated as an independent stream. This module aggregates the order
 stream into a per-customer summary (first-order date, acquisition channel,
 lifetime order count/value) that downstream metrics and tests can use to

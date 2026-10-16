@@ -1,8 +1,8 @@
 """Pub/Sub-triggered Cloud Function: disables billing on this project the
 moment the linked budget's spend reaches 100% of its threshold.
 
-This is a hard cap, not a notification -- see PROGRESS.md "예산 하드캡"
-decision entry for why disabling billing (project-wide) is the only way to
+This is a hard cap, not a notification -- see docs/operations.md "예산과 하드캡"
+for why disabling billing (project-wide) is the only way to
 guarantee no further charges, and why that necessarily takes every billable
 resource in the project offline (including the public Cloud Run app) until
 the owner manually re-links billing.

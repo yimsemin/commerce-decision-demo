@@ -1,4 +1,4 @@
-"""Demonstrates PROJECT.md §3 question 7 ("after an action or simulated
+"""Demonstrates docs/PROJECT.md §3 question 7 ("after an action or simulated
 intervention, did the relevant KPI improve?"). There is no separate
 verification feature -- the same deterministic rule that detects an
 issue is re-run on fresher data to check it. This test constructs a

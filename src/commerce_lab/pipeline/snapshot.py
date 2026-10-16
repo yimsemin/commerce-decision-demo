@@ -1,6 +1,6 @@
 """Builds the application-ready snapshot: the *only* artifact the
-executive web app reads (PROJECT.md's public-traffic-never-hits-BigQuery
-revision -- see PROGRESS.md decisions log). Combines M3 metrics and M4
+executive web app reads (docs/PROJECT.md's public-traffic-never-hits-BigQuery
+revision -- see docs/operations.md). Combines M3 metrics and M4
 decision items into one small, JSON-serializable structure.
 """
 

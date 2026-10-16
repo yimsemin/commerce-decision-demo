@@ -2,12 +2,12 @@
 
 `CLAUDE.md`("메트릭 정의를 명시적으로 유지")와 `PROJECT.md` §6("정확한 공식은 한 곳에 문서화")에 따른, 모든 KPI 공식의 단일 출처. 다음 두 구현체가 존재하며 반드시 이 문서와 정확히 일치해야 한다:
 
-- `sql/metrics/*.sql` — `staging.*` 위의 BigQuery SQL. 리프레시 파이프라인이 사용하는, 클라우드에 배포된 권위 있는 경로.
-- `src/commerce_lab/metrics/*.py` — 로컬 개발(`PROJECT.md` §10)과 자동화 테스트용 pandas 미러.
+- `sql/metrics/*.sql` — `staging.*` 위의 BigQuery 테이블 함수(`metrics.sales_summary(as_of, window_days)` 등). 리프레시 Job이 기준일마다 호출해 스냅샷의 KPI를 만드는, 클라우드에 배포된 권위 있는 경로.
+- `src/commerce_lab/metrics/*.py` — 로컬 개발(`PROJECT.md` §10)과 자동화 테스트용 pandas 기준 구현. `python -m commerce_lab.pipeline.parity --seed N`이 같은 데이터에서 두 구현의 모든 KPI와 의사결정 항목을 대조한다(반올림 한 단계 차이까지 허용).
 
 ## 기간 비교
 
-"현재 기간" = 데이터에 존재하는 가장 최근 `window_days`(기본 30)일. "이전 기간" = 그 직전 `window_days`일. 하드코딩된 달력 날짜가 아니라 데이터의 `MAX(date)`로부터 계산하므로, 어떤 리프레시에도 동일한 로직이 적용된다(`metrics/periods.py`).
+"현재 기간" = 데이터에 존재하는 가장 최근 `window_days`(기본 30)일. "이전 기간" = 그 직전 `window_days`일. 하드코딩된 달력 날짜가 아니라 `as_of`(기본은 데이터의 최근 날짜, 히스토리 기준일마다 다름)로부터 계산하므로, 어떤 리프레시에도 동일한 로직이 적용된다(`metrics/periods.py`).
 
 ## 매출(Sales)
 

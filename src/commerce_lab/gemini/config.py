@@ -2,19 +2,12 @@
 
 Model and location were chosen deliberately, not defaulted:
 
-- Location: `us-central1` (changed 2026-09-23, see PROGRESS.md --
-  originally `global`). The live refresh job's service account
-  (`commerce-refresh-runtime`) was getting `403 PERMISSION_DENIED` on
-  `aiplatform.endpoints.predict` against the `global` publisher-model
-  resource even though it holds `roles/aiplatform.user` at the project
-  level and an identical call succeeds with the owner's own user
-  credentials -- IAM Policy Troubleshooter could confirm the allow
-  policy but not rule out an org-level deny/access-boundary policy it
-  had no visibility into. Trying a standard regional endpoint instead
-  of the newer `global` one is the cheapest way to test whether that
-  policy is location-scoped. If this doesn't fix it, the cause is
-  elsewhere (org Deny policy, VPC-SC, or similar) and this file isn't
-  the place to chase it further.
+- Location: `us-central1`. The refresh job's service account got
+  `403 PERMISSION_DENIED` on `aiplatform.endpoints.predict` for the
+  `global` publisher-model resource despite `roles/aiplatform.user`, while
+  the same call worked with a user account; a standard regional endpoint
+  works. The root cause (likely an org-level policy) is not known --
+  see docs/operations.md.
 - Model: `gemini-2.5-flash`. Fast/cheap, sufficient for summarizing a
   small structured decision list; this is not a reasoning-heavy task.
 """

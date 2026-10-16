@@ -1,5 +1,5 @@
 # Refresh job container -- Cloud Run Job, triggered by Cloud Scheduler.
-# Runs the full PROJECT.md §10 automation flow: generate synthetic data,
+# Runs the full docs/PROJECT.md §10 automation flow: generate synthetic data,
 # upload to GCS, load BigQuery, compute metrics/decisions, build the
 # snapshot, call Gemini, upload the snapshot. Separate image from the
 # app's Dockerfile because this needs the "pipeline" extras

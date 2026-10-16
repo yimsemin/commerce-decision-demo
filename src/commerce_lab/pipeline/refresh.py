@@ -1,5 +1,5 @@
 """End-to-end refresh: the manual local-dev equivalent of the full
-PROJECT.md §10 automation flow (generate -> GCS -> BigQuery -> metrics ->
+docs/PROJECT.md §10 automation flow (generate -> GCS -> BigQuery -> metrics ->
 snapshot -> AI summary).
 
 Local mode (default): generate synthetic data (a fresh random seed each

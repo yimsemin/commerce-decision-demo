@@ -15,6 +15,7 @@
 | 필드 | 역할 |
 |---|---|
 | `compute(datasets, window, params)` | 이 관점의 KPI를 계산해 스냅샷의 한 섹션(dict)으로 반환 |
+| `compute_warehouse(warehouse, window, params)` | (선택) 같은 섹션을 BigQuery `metrics` 함수로 계산. 없으면 클라우드에서도 `compute`(pandas)로 계산되고 스냅샷의 `metrics_source`에 `pandas`로 기록된다 |
 | `detect(section, params)` | 그 **섹션만** 읽어 `DecisionItem` 목록 반환 (결정적, AI 없음) |
 | `params` | 조정 가능한 임계값. `label`은 ko/en 모두 채운다(방향까지 드러나게: "ROAS 변화율 ≤ 이 값이면 high"). `runtime=True`면 앱에 슬라이더가 생기고(`min`/`max`/`step` 필수), `False`면 `compute`가 쓰는 값이라 설정 파일로만 바꾼다 |
 | `data_sources` | (선택) 새 원천 데이터셋: 컬럼 정의 + 합성 데이터 생성 함수 |

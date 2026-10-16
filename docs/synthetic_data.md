@@ -3,10 +3,15 @@
 생성기: `src/commerce_lab/datagen/`. 실행:
 
 ```
-python -m commerce_lab.datagen.generator --seed 42 --out data/generated
+python -m commerce_lab.datagen.generator --out data/generated            # 새 랜덤 시드 (출력에 시드가 찍힌다)
+python -m commerce_lab.datagen.generator --seed 42 --out data/generated   # 같은 시드는 같은 데이터
 ```
 
-시드가 주어지면 결정적(deterministic)이다(기본값 `42`). 같은 시드는 항상 바이트 단위로 동일한 CSV를 만든다. 고정된 기준 날짜 범위: 2026-05-25 ~ 2026-09-21(120일)이라, 실제 실행 날짜와 무관하게 출력이 흔들리지 않는다.
+시드를 주지 않으면 매번 새 랜덤 시드를 쓴다(리프레시 Job은 매일 새 시드). 같은 시드는 항상 동일한 데이터를 만든다(`generate_all`의 기본값은 `42`, 테스트용). 날짜 범위는 2026-05-25 ~ 2026-09-21(120일)로 고정이라, 시드가 바꾸는 것은 날짜가 아니라 주문·마케팅·재고 값이다.
+
+**시나리오 보장.** 랜덤 시드에서는 심은 효과가 표본 잡음에 가려지거나, 잡음이 엉뚱한 세그먼트를 high로 밀어 올릴 수 있다. 그래서 `generate_all`은 한 번 생성한 뒤 `plant_check.planted_scenario_failures`로 4개 시나리오가 high 임계값을 여유 있게 넘는지, 심지 않은 세그먼트는 high 임계값을 넘지 않는지 확인하고, 아니면 같은 시드에서 파생한 다음 시도로 다시 생성한다(최대 50회). 그래서 어떤 시드든 high 이슈는 정확히 심은 4개이고, 시드는 여전히 데이터를 재현한다. 잡음으로 생기는 medium/low 이슈는 의도적으로 허용한다. 실측 통과율은 시도 1회당 약 60%다.
+
+**아카이브.** 매일 새 데이터가 `raw/commerce/날짜/`에 쌓이고 같은 폴더의 `seed.txt`에 시드가 기록된다. 하루 약 0.4MB라 앱(스냅샷 JSON 1개만 읽음)에는 영향이 없다.
 
 ## 데이터셋
 
@@ -39,4 +44,4 @@ python -m commerce_lab.datagen.generator --seed 42 --out data/generated
 python -m pytest tests/test_datagen -q
 ```
 
-스키마/널 없음/일관성 검사, 시드 결정성, 4개 시나리오 모두의 독립적 관측 가능성을 커버한다.
+스키마/널 없음/일관성 검사, 시드 재현성, 여러 시드에서 4개 시나리오가 깨끗하게 심어지는지, 4개 시나리오 모두의 독립적 관측 가능성을 커버한다.

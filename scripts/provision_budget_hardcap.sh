@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Reproducible provisioning for a billing hard cap: when the existing
 # "commerce-decision-demo safety budget" (see provision_gcp.sh's sibling
-# owner-run console step, PROGRESS.md) reports spend >= 100% of its
+# owner-run console step; docs/operations.md) reports spend >= 100% of its
 # threshold, a Cloud Function disables billing on this project. This is a
-# hard cap, not the budget's own alert emails -- see PROGRESS.md "예산
-# 하드캡" decision entry for the tradeoff (it takes every billable
+# hard cap, not the budget's own alert emails -- see docs/operations.md "예산과
+# 하드캡" for the tradeoff (it takes every billable
 # resource in the project offline, including the public Cloud Run app,
 # until the owner manually re-links billing).
 #
@@ -13,7 +13,7 @@
 # billing-account-level IAM role the function's service account needs to
 # actually call the Billing API -- billing-account IAM is deliberately
 # left as an owner-run step (see printed instructions at the end), same
-# pattern as the org-policy override in PROGRESS.md "공개 전환 실행 기록".
+# pattern as the org-policy override in docs/operations.md "앱 공개 접근 설정".
 #
 # Required environment variables:
 #   GCP_PROJECT_ID           existing GCP project (billing already enabled)

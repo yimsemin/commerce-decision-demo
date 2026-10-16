@@ -2,7 +2,7 @@
 
 파편화된 합성 커머스 데이터를 경영 의사결정의 근거로 바꾸는 Google Cloud 포트폴리오 샘플: **무엇이 바뀌었고, 왜 바뀌었고, 무엇에 주목해야 하고, 어떻게 해야 하는지**를 보여준다 -- 위에 얹힌 AI가 아니라 그 아래의 결정적 계산이 중심이다.
 
-프로덕션 커머스 플랫폼이 아니라 데모이며, 실제 회사/고객 데이터를 쓰지 않는다. 전체 스펙: [`PROJECT.md`](PROJECT.md). 진행 로그와 결정 사항, 클라우드 검증 여부: [`PROGRESS.md`](PROGRESS.md), [`docs/verification.md`](docs/verification.md).
+프로덕션 커머스 플랫폼이 아니라 데모이며, 실제 회사/고객 데이터를 쓰지 않는다. 전체 스펙: [`docs/PROJECT.md`](docs/PROJECT.md). 라이브 리소스·운영·설계 결정: [`docs/operations.md`](docs/operations.md), 항목별 검증 상태: [`docs/verification.md`](docs/verification.md).
 
 **발표자 없이 이 프로젝트를 처음 접한다면** [내러티브 랜딩페이지](https://yimsemin.github.io/commerce-decision-demo/)부터 보는 걸 권한다 -- 4개의 심어진 비즈니스 이슈 중 하나를 직접 골라, 데이터 패턴 → 증거 화면 → 시스템의 판단까지 끝까지 따라가 볼 수 있다. 소스는 [`docs/index.html`](docs/index.html)이며, GitHub Pages가 `main` 브랜치의 `docs/` 폴더를 그대로 서빙한다(별도 빌드 없음).
 
@@ -34,7 +34,7 @@ flowchart LR
 
 | 컴포넌트 | 존재 이유 |
 |---|---|
-| 합성 데이터 생성기 | 이 프로젝트가 쓰는 유일한 데이터를 만든다 -- 결정적이고 시드 기반이며, 심어놓은 4개 비즈니스 시나리오를 포함해([`docs/synthetic_data.md`](docs/synthetic_data.md)) 나머지 시스템이 탐지할 진짜 대상을 제공한다 |
+| 합성 데이터 생성기 | 이 프로젝트가 쓰는 유일한 데이터를 만든다 -- 시드 기반이라 같은 시드는 같은 데이터를 재현하고, 매일 실행 때는 새 랜덤 시드를 쓰며, 어떤 시드든 심어놓은 4개 비즈니스 시나리오가 뚜렷하게 나오도록 검증해([`docs/synthetic_data.md`](docs/synthetic_data.md))([`docs/synthetic_data.md`](docs/synthetic_data.md)) 나머지 시스템이 탐지할 진짜 대상을 제공한다 |
 | Cloud Storage | 원본 CSV의 집결지이자, 앱이 읽는 유일한 파일(`snapshot/app_snapshot.json`)이 있는 곳 -- 앱을 BigQuery와 완전히 분리한다 |
 | BigQuery (raw/staging/metrics) | 결정적 근거(source of truth). raw는 CSV를 그대로 반영, staging은 얇은 타입/중복제거 레이어, metrics는 문서화된 KPI 공식([`docs/kpi_definitions.md`](docs/kpi_definitions.md)) |
 | 의사결정 규칙 (Python) | metrics 레이어 위에서 동작하는 결정적, 임계값 기반 이슈 탐지([`docs/decision_rules.md`](docs/decision_rules.md)) -- "무엇이 문제인지"는 AI가 아니라 이 로직이 정한다 |
@@ -44,9 +44,9 @@ flowchart LR
 
 ## 데이터/메트릭 흐름
 
-1. `commerce_lab.datagen`이 고정 시드로 CSV 5개(orders, marketing, inventory, customers, skus)를 생성한다.
-2. `commerce_lab.pipeline.ingest`가 이를 GCS에 올리고 BigQuery `raw` 테이블에 적재한다. `sql/staging/*.sql`이 그 위에 타입이 지정된 뷰를 만든다.
-3. `sql/metrics/*.sql`(로컬 개발/테스트용으로 `commerce_lab.metrics`에 미러링)이 현재-대-이전 기간 KPI를 계산한다: 매출, 마케팅(지출/ROAS/CAC), 고객(신규-재구매 비중, 재구매율), 재고(소진 일수, 품절/과잉 위험).
+1. `commerce_lab.datagen`이 시드로 CSV 5개(orders, marketing, inventory, customers, skus)를 생성한다. 매일 리프레시는 새 랜덤 시드를 뽑고(시드는 스냅샷의 `data_seed`와 GCS `raw/commerce/날짜/seed.txt`에 기록), 같은 시드를 `--seed`로 주면 같은 데이터가 재현된다.
+2. `commerce_lab.pipeline.ingest`가 이를 GCS에 올리고 BigQuery `raw` 테이블에 적재한다(전체 교체). 적재 행 수가 생성한 데이터와 다르면 리프레시가 실패한다. `sql/staging/*.sql`이 그 위에 타입이 지정된 뷰를 만든다.
+3. BigQuery의 `metrics` 테이블 함수(`sql/metrics/*.sql`)가 현재-대-이전 기간 KPI를 계산한다: 매출, 마케팅(지출/ROAS/CAC), 고객(신규-재구매 비중, 재구매율), 재고(소진 일수, 품절/과잉 위험). 리프레시 Job이 기준일마다 이 함수를 호출해 그 결과로 스냅샷을 만든다(스냅샷의 `metrics_source`가 `bigquery`). `commerce_lab.metrics`의 pandas 구현은 로컬 개발·테스트용 기준 구현이며, `python -m commerce_lab.pipeline.parity --seed N`이 두 결과가 같은지 대조한다.
 4. `commerce_lab.decisions.rules`가 이 KPI에 고정 임계값을 적용해 구조화된 `DecisionItem`을 만든다: 이슈, 근거 KPI, 유력 원인, 영향받는 브랜드/채널/SKU, 심각도, 가능한 조치, 이후 모니터링할 KPI.
 5. `commerce_lab.gemini`가 선택적으로 그 의사결정 항목들을 짧은 경영진 요약으로 서술한다 -- 오직 그 구조에만 근거하며 원본 데이터는 절대 보지 않는다.
 6. `commerce_lab.pipeline.snapshot`이 모든 것을 `app_snapshot.json` 하나로 묶는다. Streamlit 앱이 읽는 유일한 산출물이다 -- 기준일 하나가 아니라, 120일 합성 기간 안에서 60일 이상의 히스토리를 확보할 수 있는 여러 기준일(anchor)마다 각각 현재-대-이전 30일 비교를 미리 계산해 함께 담는다. Gemini 요약은 최신 기준일 하나에만 생성한다(비용/지연 절감).
@@ -98,16 +98,15 @@ flowchart LR
 Python 3.14 필요(`.python-version`에 고정; 이 경로는 클라우드 계정이 필요 없다).
 
 ```bash
-python -m venv .venv
-.venv/Scripts/pip install -e ".[dev]"        # macOS/Linux는 .venv/bin/pip
-python -m commerce_lab.pipeline.refresh      # 데이터 생성 + data/generated/app_snapshot.json 생성
-streamlit run src/commerce_lab/app/main.py   # 그 로컬 스냅샷으로 앱 실행
-python -m pytest -q                          # 테스트 61개
+uv sync --extra dev                              # 프로젝트 .venv 생성
+uv run python -m commerce_lab.pipeline.refresh   # 새 랜덤 시드로 데이터 생성 + data/generated/app_snapshot.json 생성
+uv run streamlit run src/commerce_lab/app/main.py   # 그 로컬 스냅샷으로 앱 실행
+uv run pytest -q                                 # 테스트
 ```
 
 ## 배포 (GCP)
 
-결제가 활성화된 기존 GCP 프로젝트가 필요하다. 모든 자동화는 `provision_gcp.sh`가 만드는 전용 최소권한 서비스 계정 3개로 실행된다(빌드용 1개, 읽기 전용 앱용 1개, 읽기/쓰기 refresh job + Scheduler 호출자용 1개) -- 프로젝트의 광범위한 기본 서비스 계정이 아니다. 각 계정은 자신이 필요한 버킷/데이터셋/저장소에만 스코프된다. 이 3개 계정과 `PROGRESS.md`에 나열된 역할 외에는 프로젝트 생성이나 IAM 변경을 하지 않는다. 모든 스크립트는 멱등적이며 `gcloud storage`/`bq`/`gcloud run`/`gcloud scheduler`를 사용한다 -- 콘솔 클릭이 아니라 재현 가능한 CLI다.
+결제가 활성화된 기존 GCP 프로젝트가 필요하다. 모든 자동화는 `provision_gcp.sh`가 만드는 전용 최소권한 서비스 계정 3개로 실행된다(빌드용 1개, 읽기 전용 앱용 1개, 읽기/쓰기 refresh job + Scheduler 호출자용 1개) -- 프로젝트의 광범위한 기본 서비스 계정이 아니다. 각 계정은 자신이 필요한 버킷/데이터셋/저장소에만 스코프된다. 이 계정들과 [`docs/operations.md`](docs/operations.md)에 나열된 역할 외에는 프로젝트 생성이나 IAM 변경을 하지 않는다. 모든 스크립트는 멱등적이며 `gcloud storage`/`bq`/`gcloud run`/`gcloud scheduler`를 사용한다 -- 콘솔 클릭이 아니라 재현 가능한 CLI다.
 
 ```bash
 export GCP_PROJECT_ID=your-project
@@ -125,11 +124,11 @@ python -m commerce_lab.pipeline.refresh --upload --summarize
 ./scripts/teardown_gcp.sh --yes
 ```
 
-**이미 실제로 실행해봤다**(프로젝트 `commerce-decision-demo`, 2026-09-23, 수동 실행뿐 아니라 Cloud Scheduler가 실제로 트리거하는 것까지 확인) -- 전체 항목별 상태는 [`docs/verification.md`](docs/verification.md), 현재 라이브 리소스 현황은 `PROGRESS.md`의 "배포된 리소스" 섹션을 참고. 직접 실행하기 전에 알아둘 것:
+**프로젝트 `commerce-decision-demo`에 실제로 배포해 매일 Cloud Scheduler가 무인 실행 중이다.** 항목별 검증 상태는 [`docs/verification.md`](docs/verification.md), 라이브 리소스 현황은 [`docs/operations.md`](docs/operations.md)의 "라이브 리소스" 절을 참고. 직접 실행하기 전에 알아둘 것:
 
 - Windows + Python 3.14 환경에서 `bq`가 PATH에 있어도 `python3.14: command not found`로 실패할 수 있다. 그럴 때는 `CLOUDSDK_PYTHON="C:\Python314\python.exe" CLOUDSDK_BQ_PYTHON="C:\Python314\python.exe"`를 앞에 붙인다.
-- 앱은 현재 로그인 없이 공개 접근 가능하다(`https://commerce-decision-app-6uj2ksurka-du.a.run.app`). 호스팅 조직(`example.org`)이 도메인 제한 공유 정책을 쓰고 있어 `--allow-unauthenticated`만으로는 부족했고, 조직 전체 정책은 그대로 둔 채 이 프로젝트(`commerce-decision-demo`)에만 `iam.allowedPolicyMemberDomains` 오버라이드를 걸어 해결했다 -- 방법은 `PROGRESS.md`의 "공개 전환 실행 기록" 참고.
-- 다른 컴퓨터나 새 에이전트 세션에서 이어간다면 `PROGRESS.md`의 "새 에이전트/다른 컴퓨터에서 이어가기" 섹션을 참고 -- 자격 증명은 머신별로 따로 설정해야 하며 이 저장소에는 없다.
+- 앱은 로그인 없이 공개 접근 가능하다(`https://commerce-decision-app-6uj2ksurka-du.a.run.app`). 호스팅 조직이 도메인 제한 공유 정책을 쓰면 `--allow-unauthenticated`만으로는 공개되지 않아, 조직 정책은 그대로 두고 이 프로젝트에만 예외를 두는 방법을 쓴다 -- [`docs/operations.md`](docs/operations.md)의 "앱 공개 접근 설정" 참고.
+- 다른 컴퓨터나 새 에이전트 세션에서 이어간다면 [`docs/operations.md`](docs/operations.md)의 "새 환경에서 이어가기" 절을 참고 -- 자격 증명은 머신별로 따로 설정해야 하며 이 저장소에는 없다.
 
 ## 비용과 안전
 

@@ -6,7 +6,7 @@ provisioned via scripts/provision_gcp.sh):
 
     python -m commerce_lab.pipeline.ingest --data-dir data/generated
 
-This is the M2 half of the refresh flow described in PROJECT.md §10
+This is the M2 half of the refresh flow described in docs/PROJECT.md §10
 (steps 2-3: place source files in Cloud Storage, load/update BigQuery).
 Steps 4-6 (metrics, snapshot, AI summary) are separate later modules.
 """

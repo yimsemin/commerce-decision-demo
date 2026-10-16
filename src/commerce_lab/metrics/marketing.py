@@ -9,7 +9,7 @@ Formulas (see docs/kpi_definitions.md):
 CAC is computed at the marketing-channel grain only (not brand x channel):
 the synthetic customer model assigns `acquisition_channel` per customer,
 independent of brand, so a brand-level CAC split would not be a defensible
-calculation from this data (PROJECT.md §6 explicitly scopes CAC to "where
+calculation from this data (docs/PROJECT.md §6 explicitly scopes CAC to "where
 the synthetic model supports a defensible calculation").
 """
 
