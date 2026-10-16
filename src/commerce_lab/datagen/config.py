@@ -73,12 +73,16 @@ SCENARIO_INV_OPENING_STOCK = 90
 # (pre-ramp) demand for this one SKU, instead of the generic restock
 # cadence used for every other SKU.
 SCENARIO_INV_BASELINE_RECEIPTS_RANGE = (0, 2)
+SCENARIO_INV_BASELINE_STOCK_CAP = 30  # no baseline receipts above this stock level
 SCENARIO_INV_RECENT_RECEIPTS_PER_DAY = 0  # cut off: deliberately insufficient
+# At the start of the recent window the SKU gets one restock bringing stock
+# to this fraction of the window's total demand -- deliberately short.
+SCENARIO_INV_RECENT_COVERAGE = 0.97
 
 # Scenario 3: material sales decline concentrated in one brand/channel.
 SCENARIO_DECLINE_BRAND = "Marlow"
 SCENARIO_DECLINE_CHANNEL = "retail_partner"
-SCENARIO_DECLINE_FACTOR = 0.55  # recent-window order volume vs baseline
+SCENARIO_DECLINE_FACTOR = 0.45  # recent-window order volume vs baseline
 
 # Scenario 4: meaningful shift in new-vs-returning customer mix.
 # Acquisition of new customers slows sharply in the recent window, shifting

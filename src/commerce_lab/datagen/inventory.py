@@ -65,6 +65,9 @@ def generate_inventory(rng: random.Random, skus: list[Sku], orders_df: pd.DataFr
             opening = max(5, round(baseline_rate * rng.uniform(*NORMAL_STARTING_DAYS_OF_COVER_RANGE)))
 
         stock = opening
+        recent_demand_total = sum(
+            v for (sid, d), v in units_sold_by_sku_day.items() if sid == sku.sku_id and d >= config.RECENT_START_DATE.isoformat()
+        )
         day_index = 0
         trailing_demand: list[int] = []
         for day in daterange(config.START_DATE, config.END_DATE):
@@ -72,10 +75,18 @@ def generate_inventory(rng: random.Random, skus: list[Sku], orders_df: pd.DataFr
             raw_demand = units_sold
 
             if is_scenario_sku:
-                if is_recent(day):
+                if day == config.RECENT_START_DATE:
+                    # One last restock sized just short of the recent
+                    # window's demand, then nothing: the SKU runs out
+                    # right at the end of the window whatever the seed.
+                    target = round(config.SCENARIO_INV_RECENT_COVERAGE * recent_demand_total)
+                    receipts = max(0, target - stock)
+                elif is_recent(day):
                     receipts = config.SCENARIO_INV_RECENT_RECEIPTS_PER_DAY
                 else:
                     receipts = rng.randint(*config.SCENARIO_INV_BASELINE_RECEIPTS_RANGE)
+                    if stock >= config.SCENARIO_INV_BASELINE_STOCK_CAP:
+                        receipts = 0  # keep pre-window stock low enough to run short
             elif day_index % NORMAL_RECEIPT_INTERVAL_DAYS == 0:
                 # Reactive replenishment: order up to (roughly) whatever
                 # demand was actually realized over the last interval,
