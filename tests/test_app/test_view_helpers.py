@@ -120,3 +120,12 @@ def test_kpi_trend_unknown_issue_type_returns_empty():
     history = _fake_history(roas_by_date={"2026-08-01": 2.5})
     decision = {"issue_type": "something_new", "affected": {}}
     assert kpi_trend(history, decision) == []
+
+
+def test_resolve_anchor_exact_earlier_and_out_of_range():
+    from commerce_lab.app.view_helpers import resolve_anchor
+
+    available = ["2026-08-01", "2026-08-03", "2026-08-04"]
+    assert resolve_anchor(available, "2026-08-03") == "2026-08-03"
+    assert resolve_anchor(available, "2026-08-02") == "2026-08-01"  # gap -> closest earlier
+    assert resolve_anchor(available, "2026-07-01") == "2026-08-01"  # before range -> first

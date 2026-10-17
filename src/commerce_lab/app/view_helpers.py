@@ -31,6 +31,16 @@ def top_issues(decisions: list[dict], n: int = 5) -> list[dict]:
     return sorted(decisions, key=key)[:n]
 
 
+def resolve_anchor(available: list[str], picked: str) -> str:
+    """The precomputed anchor to show for a picked date: the date itself, or
+    the closest earlier one if it was not precomputed (never a date with no
+    snapshot). `available` is ascending, as `available_as_of_dates` is."""
+    if picked in available:
+        return picked
+    earlier = [d for d in available if d <= picked]
+    return earlier[-1] if earlier else available[0]
+
+
 def kpi_trend(history: dict, decision: dict) -> list[dict]:
     """The `decision`'s primary KPI across every precomputed as-of anchor
     in `history` (oldest first) -- lets the app show a trend, not just a

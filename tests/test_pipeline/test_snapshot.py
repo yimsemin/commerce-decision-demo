@@ -76,7 +76,8 @@ def test_default_history_anchors_are_ascending_and_bounded(datasets):
     anchors = default_history_anchors(datasets)
     assert anchors == sorted(anchors)
     assert anchors[-1].isoformat() == "2026-09-21"
-    assert len(anchors) >= 2  # the 120-day fixture range supports more than one anchor
+    assert len(anchors) == 61  # every day with a full 60-day history: day 60..120
+    assert all((b - a).days == 1 for a, b in zip(anchors, anchors[1:]))
     # every anchor must have a full 60 days of history behind it
     for a in anchors:
         assert (a - dt.date(2026, 5, 25)).days >= 59

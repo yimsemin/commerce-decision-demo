@@ -17,6 +17,7 @@ import argparse
 import datetime as dt
 from pathlib import Path
 
+from ..datagen import config as datagen_config
 from .config import GcpConfig
 from .gcs import upload_dataset, upload_seed
 from .bigquery import ensure_extra_raw_tables, load_all_raw_tables
@@ -46,7 +47,7 @@ def run_ingest(data_dir: Path, run_date: str | None = None, data_sources=(), see
         bigquery.SourceFormat.CSV,
     )
     if seed is not None:  # after the load: only the CSVs are table sources
-        uris.append(upload_seed(storage_client, cfg.bucket, "commerce", run_date, seed))
+        uris.append(upload_seed(storage_client, cfg.bucket, "commerce", run_date, seed, datagen_config.END_DATE.isoformat()))
     return uris
 
 

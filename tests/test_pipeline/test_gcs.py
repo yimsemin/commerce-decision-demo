@@ -84,6 +84,6 @@ def test_upload_seed_writes_the_seed_next_to_the_days_csvs():
         def bucket(self, name):
             return Bucket()
 
-    uri = upload_seed(Client(), "b", "commerce", "2026-10-16", 123)
+    uri = upload_seed(Client(), "b", "commerce", "2026-10-16", 123, "2026-10-16")
     assert uri == "gs://b/raw/commerce/2026-10-16/seed.txt"
-    assert written == {"raw/commerce/2026-10-16/seed.txt": "123\n"}
+    assert written == {"raw/commerce/2026-10-16/seed.txt": "seed=123\nend_date=2026-10-16\n"}

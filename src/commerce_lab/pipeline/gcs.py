@@ -51,9 +51,10 @@ def upload_dataset(client, bucket_name: str, local_dir: Path, dataset_name: str,
     return uploaded_uris
 
 
-def upload_seed(client, bucket_name: str, dataset_name: str, run_date: str, seed: int) -> str:
-    """Record the generator seed next to the day's CSVs, so any archived
-    day can be regenerated exactly (`--seed N`)."""
+def upload_seed(client, bucket_name: str, dataset_name: str, run_date: str, seed: int, end_date: str) -> str:
+    """Record the generator seed and the window's end date next to the
+    day's CSVs, so any archived day can be regenerated exactly
+    (`COMMERCE_END_DATE=<end_date> ... --seed <seed>`)."""
     path = f"raw/{dataset_name}/{run_date}/seed.txt"
-    client.bucket(bucket_name).blob(path).upload_from_string(f"{seed}\n")
+    client.bucket(bucket_name).blob(path).upload_from_string(f"seed={seed}\nend_date={end_date}\n")
     return f"gs://{bucket_name}/{path}"

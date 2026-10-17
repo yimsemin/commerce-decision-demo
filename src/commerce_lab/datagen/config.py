@@ -8,13 +8,27 @@ verify planted scenarios share a single source of truth.
 from __future__ import annotations
 
 import datetime as dt
+import os
 
 # ---------------------------------------------------------------------------
 # Time window
 # ---------------------------------------------------------------------------
-# Fixed anchor date so a given seed always produces byte-identical data,
-# regardless of when the generator is actually run.
-END_DATE = dt.date(2026, 9, 21)
+# The window ends "today" (Korea time, the scheduler's timezone) so every
+# daily refresh moves the as-of date forward. Planted scenarios are defined
+# relative to END_DATE, so they always sit in the most recent 30 days. Set
+# COMMERCE_END_DATE=YYYY-MM-DD to pin the window (tests, reproducible runs);
+# for a given seed AND end date the output is byte-identical.
+_KST = dt.timezone(dt.timedelta(hours=9))
+
+
+def _resolve_end_date() -> dt.date:
+    pinned = os.environ.get("COMMERCE_END_DATE")
+    if pinned:
+        return dt.date.fromisoformat(pinned)
+    return dt.datetime.now(_KST).date()
+
+
+END_DATE = _resolve_end_date()
 TOTAL_DAYS = 120
 START_DATE = END_DATE - dt.timedelta(days=TOTAL_DAYS - 1)
 

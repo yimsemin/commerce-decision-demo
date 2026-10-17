@@ -7,8 +7,7 @@ Generates the dataset for `--seed`, loads it into BigQuery exactly as the
 refresh job does (this replaces the raw tables and today's GCS folder), then
 builds every comparison anchor's snapshot twice -- KPIs from BigQuery and
 from pandas -- and compares every KPI and every decision item. Exits 1 on
-any difference. Rounded values may differ by one rounding step (BigQuery
-rounds half away from zero, numpy half to even).
+any difference. Rounded values may differ by one rounding step (see ROUNDING_STEP).
 """
 
 from __future__ import annotations
@@ -17,21 +16,29 @@ import argparse
 import math
 from pathlib import Path
 
-# One rounding step per KPI name; anything not listed must agree to 1e-6.
+# One rounding step per KPI name (the size of the last rounded digit);
+# anything not listed must agree to 1e-6. BigQuery rounds half away from
+# zero and numpy half to even, and the two sum floats in different orders,
+# so a value sitting exactly on a .5 boundary can land one step apart.
 ROUNDING_STEP = {
-    "pct_change": 0.05,
-    "roas_change_pct": 0.05,
-    "days_of_cover": 0.05,
-    "velocity": 0.005,
-    "aov": 0.005,
-    "net_revenue": 0.005,
-    "cac": 0.005,
-    "current_new_share": 0.0005,
-    "previous_new_share": 0.0005,
-    "current_returning_share": 0.0005,
-    "previous_returning_share": 0.0005,
-    "repeat_purchase_rate": 0.0005,
+    "pct_change": 0.1,
+    "roas_change_pct": 0.1,
+    "days_of_cover": 0.1,
+    "velocity": 0.01,
+    "aov": 0.01,
+    "net_revenue": 0.01,
+    "cac": 0.01,
+    "current_new_share": 0.001,
+    "previous_new_share": 0.001,
+    "current_returning_share": 0.001,
+    "previous_returning_share": 0.001,
+    "repeat_purchase_rate": 0.001,
 }
+
+# Prose built from the numbers above (formatted to whole units), so a
+# boundary value can differ by 1 there too; the numbers themselves are
+# compared in `supporting_kpi`.
+PROSE_FIELDS = {"likely_drivers"}
 
 
 def _close(key: str, a, b) -> bool:
@@ -61,6 +68,10 @@ def compare(a, b, path: str = "") -> list[str]:
     return [] if _close(key, a, b) else [f"{path}: {a!r} vs {b!r}"]
 
 
+def _without_prose(decisions: list[dict]) -> list[dict]:
+    return [{k: v for k, v in d.items() if k not in PROSE_FIELDS} for d in decisions]
+
+
 def main(argv: list[str] | None = None) -> None:
     from ..datagen.generator import generate_all, write_datasets
     from ..lenses.registry import data_sources
@@ -87,7 +98,7 @@ def main(argv: list[str] | None = None) -> None:
         diffs = []
         for lens in lenses:
             diffs += compare(bq_snap[lens.id], pd_snap[lens.id], f"{as_of}.{lens.id}")
-        diffs += compare(bq_snap["decisions"], pd_snap["decisions"], f"{as_of}.decisions")
+        diffs += compare(_without_prose(bq_snap["decisions"]), _without_prose(pd_snap["decisions"]), f"{as_of}.decisions")
         total += len(diffs)
         print(f"{as_of}: {'OK' if not diffs else f'{len(diffs)} difference(s)'}")
         for d in diffs[:20]:

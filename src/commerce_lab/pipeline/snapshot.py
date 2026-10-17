@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import datetime as dt
 import json
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import pandas as pd
@@ -21,13 +22,16 @@ from .serialize import to_json_safe
 SNAPSHOT_SCHEMA_VERSION = 2  # 2: adds `lenses` + `params` + per-decision `lens`; lens sections keep their v1 shape
 HISTORY_SCHEMA_VERSION = 2  # shape of the build_snapshot_history() wrapper
 
-# How many historical as-of points to precompute so the app can offer a
-# comparison-period selector without ever querying BigQuery live. Anchors
-# are spaced `HISTORY_SPACING_DAYS` apart, most recent last, and each still
-# uses a `window_days`-vs-`window_days` current/previous comparison -- only
-# the current period's *end* moves, not the comparison methodology.
-HISTORY_ANCHOR_COUNT = 5
-HISTORY_SPACING_DAYS = 15
+# Which historical as-of points to precompute so the app can offer a
+# comparison-period selector without ever querying BigQuery live. By
+# default every day that still has a full `window_days`-vs-`window_days`
+# comparison behind it is an anchor (`HISTORY_ANCHOR_COUNT = None` means
+# "as many as the data supports"), spaced `HISTORY_SPACING_DAYS` apart,
+# most recent last. Only the current period's *end* moves, not the
+# comparison methodology.
+HISTORY_ANCHOR_COUNT: int | None = None
+HISTORY_SPACING_DAYS = 1
+WAREHOUSE_WORKERS = 8  # concurrent anchors when KPIs come from BigQuery
 
 
 def resolve_lenses(lenses: list[Lens] | None, settings: LabSettings | None) -> tuple[list[Lens], dict]:
@@ -77,11 +81,11 @@ def build_snapshot(
 def default_history_anchors(
     datasets: dict[str, pd.DataFrame],
     window_days: int = 30,
-    count: int = HISTORY_ANCHOR_COUNT,
+    count: int | None = HISTORY_ANCHOR_COUNT,
     spacing_days: int = HISTORY_SPACING_DAYS,
 ) -> list[dt.date]:
-    """The latest date in the data, plus `count - 1` earlier anchors spaced
-    `spacing_days` apart -- as far back as the data can still support a full
+    """The latest date in the data, plus earlier anchors (at most `count`
+    in total, unlimited when None) spaced `spacing_days` apart -- as far back as the data can still support a full
     current-vs-previous `window_days` comparison. Ascending order (oldest
     first, latest last)."""
     latest = latest_date(datasets["orders"]["order_date"], datasets["marketing"]["date"], datasets["inventory"]["date"])
@@ -90,7 +94,7 @@ def default_history_anchors(
 
     anchors = []
     candidate = latest
-    while len(anchors) < count and candidate >= min_as_of:
+    while (count is None or len(anchors) < count) and candidate >= min_as_of:
         anchors.append(candidate)
         candidate = candidate - dt.timedelta(days=spacing_days)
     return sorted(anchors)
@@ -113,10 +117,18 @@ def build_snapshot_history(
         as_of_dates = default_history_anchors(datasets, window_days=window_days)
 
     lenses, _ = resolve_lenses(lenses, settings)
-    snapshots = {
-        as_of.isoformat(): build_snapshot(datasets, window_days=window_days, as_of=as_of, lenses=lenses, settings=settings, warehouse=warehouse)
-        for as_of in as_of_dates
-    }
+
+    def one(as_of: dt.date) -> dict:
+        return build_snapshot(datasets, window_days=window_days, as_of=as_of, lenses=lenses, settings=settings, warehouse=warehouse)
+
+    if warehouse is not None:
+        # Each anchor is ~8 independent BigQuery queries; running anchors
+        # side by side keeps a daily refresh well inside the job timeout.
+        with ThreadPoolExecutor(max_workers=WAREHOUSE_WORKERS) as pool:
+            built = list(pool.map(one, as_of_dates))
+    else:
+        built = [one(as_of) for as_of in as_of_dates]
+    snapshots = {as_of.isoformat(): snap for as_of, snap in zip(as_of_dates, built)}
     available = sorted(snapshots.keys())
 
     return {

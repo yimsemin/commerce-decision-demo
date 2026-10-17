@@ -4,7 +4,7 @@ from commerce_lab.pipeline.parity import compare
 
 
 def test_compare_accepts_one_rounding_step_and_rejects_more():
-    assert compare({"pct_change": -42.3}, {"pct_change": -42.25}) == []
+    assert compare({"pct_change": -42.3}, {"pct_change": -42.2}) == []
     assert compare({"pct_change": -42.3}, {"pct_change": -42.5}) != []
 
 
@@ -19,3 +19,13 @@ def test_compare_flags_missing_keys_row_counts_and_none_mismatch():
     assert compare([{"a": 1}], [{"a": 1}, {"a": 2}]) != []
     assert compare({"cac": None}, {"cac": 1.0}) != []
     assert compare({"cac": None}, {"cac": None}) == []
+
+
+def test_prose_is_not_compared_but_numbers_are():
+    from commerce_lab.pipeline.parity import _without_prose
+
+    a = [{"supporting_kpi": {"x": 1}, "likely_drivers": ["moved to 4303"]}]
+    b = [{"supporting_kpi": {"x": 1}, "likely_drivers": ["moved to 4304"]}]
+    assert compare(_without_prose(a), _without_prose(b)) == []
+    b[0]["supporting_kpi"]["x"] = 2
+    assert compare(_without_prose(a), _without_prose(b)) != []
