@@ -11,8 +11,8 @@ Gemini가 쓰는 것은 정확히 하나, `snapshot["gemini_summary"]`라는 짧
 ## 모델과 엔드포인트
 
 - 모델: `gemini-2.5-flash`.
-- 위치: Vertex AI `global` 엔드포인트(`GOOGLE_CLOUD_LOCATION`/클라이언트 `location="global"`). 2026-09-22 웹 조사로, `generateContent` 호출에 대해 문서화되고 실제로 동작하는 옵션이며 Gemini 2.5 Flash가 명시적으로 지원됨을 확인했다. 알려진 제약(정확한 처리 리전을 제어할 수 없음, 튜닝/배치/컨텍스트 캐싱 미지원)은 이 앱에는 해당하지 않는다: 모든 데이터가 합성 데이터라 데이터 상주(residency) 요구사항이 없고, 리프레시마다 캐시 없이 한 번 호출하는 텍스트 콜이기 때문이다. 오너 지시에 따라, 임의의 `us-central1` 대체안보다 가장 단순하게 지원되는 옵션인 `global`을 우선했다. 이후 실제 배포에서 다른 모델/위치 조합이 필요해지면 `gemini/config.py` 한 파일만 고치면 된다.
-- 2026-09-23: 실제로 `global` 엔드포인트에서 `gemini-2.5-flash`를 라이브로 호출해 4개 시나리오를 정확히 반영한 요약을 받는 데 성공했다(로컬 실행, 수동 실행한 Cloud Run Job, Cloud Scheduler가 실제로 트리거한 무인 실행 모두에서 확인). `docs/verification.md` 참고.
+- 위치: Vertex AI `us-central1`(`gemini/config.py`). `global` 엔드포인트는 문서상 지원되지만 서비스 계정 호출이 403이었다([operations.md](operations.md) 한계). 정확한 처리 리전을 제어할 수 없는 `global`의 제약(튜닝/배치/컨텍스트 캐싱 미지원)은 이 앱에 해당하지 않는다. 모든 데이터가 합성이라 데이터 상주 요구사항이 없고, 리프레시마다 캐시 없이 한 번 호출하는 텍스트 콜이기 때문이다. 다른 모델/위치가 필요하면 `gemini/config.py` 한 파일만 고치면 된다.
+- 검증: 로컬 실행, 수동 실행한 Cloud Run Job, Cloud Scheduler가 트리거한 무인 실행 모두에서 4개 시나리오를 정확히 반영한 요약을 받았다. [verification.md](verification.md) 참고.
 
 ## 실패 처리
 

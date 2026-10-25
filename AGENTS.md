@@ -17,7 +17,7 @@ uv run streamlit run src/commerce_lab/app/main.py           # 로컬 앱
 uv run python -m commerce_lab.pipeline.parity --seed N      # BigQuery와 pandas KPI 대조 (GCP 필요, 오늘 raw 테이블을 교체함)
 ```
 
-클라우드 배포·해체 절차는 [README.md](README.md)의 "배포"와 `scripts/`. 배포했던 리소스(2026-10-25 해체)와 결정 기록은 [docs/operations.md](docs/operations.md).
+클라우드 배포·해체 절차는 [README.md](README.md)의 "배포"와 `scripts/`. 리소스 구성과 결정 기록은 [docs/operations.md](docs/operations.md).
 
 ## 구조
 
