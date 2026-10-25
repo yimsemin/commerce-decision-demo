@@ -19,8 +19,8 @@ import os
 GEMINI_MODEL = "gemini-2.5-flash"
 GEMINI_LOCATION = "us-central1"
 
-# Deliberately conservative limits (owner request 2026-09-24: the Gemini
-# path is the most attractive abuse/cost target). Only the scheduled
+# Deliberately conservative limits (the Gemini path is the most
+# attractive abuse/cost target). Only the scheduled
 # refresh job ever calls Gemini -- the public app never does, and the
 # prompt is built purely from the pipeline's own structured facts, so
 # there is no user-supplied input to inject into.

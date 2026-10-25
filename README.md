@@ -1,10 +1,12 @@
 # Commerce Decision Lab
 
-> **상태: 오픈 아카이브 (2026-10-25).** 기능 추가·이슈 대응 없이 현재 상태로 공개한다. GCP 리소스는 2026-10-25에 해체해 라이브 앱은 없다. 결과는 [랜딩페이지](https://yimsemin.github.io/commerce-decision-demo/), 아래 스크린샷, 라이브 앱이 마지막으로 읽은 스냅샷 [`docs/sample/app_snapshot.json`](docs/sample/app_snapshot.json)(Gemini 요약 포함)으로 볼 수 있고, 코드는 클라우드 없이 로컬에서 그대로 실행된다.
+> **상태: 오픈 아카이브.** 기능 추가·이슈 대응 없이 공개한다. GCP 리소스는 정리되어 라이브 앱은 없다. 결과는 [랜딩페이지](https://yimsemin.github.io/commerce-decision-demo/), 아래 스크린샷, 라이브 앱이 마지막으로 읽은 스냅샷 [`docs/sample/app_snapshot.json`](docs/sample/app_snapshot.json)(Gemini 요약 포함)으로 볼 수 있고, 코드는 클라우드 없이 로컬에서 그대로 실행된다.
 
 파편화된 합성 커머스 데이터를 경영 의사결정의 근거로 바꾸는 Google Cloud 포트폴리오 샘플: **무엇이 바뀌었고, 왜 바뀌었고, 무엇에 주목해야 하고, 어떻게 해야 하는지**를 보여준다 -- 위에 얹힌 AI가 아니라 그 아래의 결정적 계산이 중심이다.
 
 프로덕션 커머스 플랫폼이 아니라 데모이며, 실제 회사/고객 데이터를 쓰지 않는다. 전체 스펙: [`docs/PROJECT.md`](docs/PROJECT.md). 배포했던 리소스·운영·설계 결정: [`docs/operations.md`](docs/operations.md), 항목별 검증 상태: [`docs/verification.md`](docs/verification.md).
+
+**이 프로젝트를 참고해 새로 시작한다면:** 경영 관점의 설계 판단은 아래 "설계 판단에서 남은 경영 인사이트", 재시작 절차와 GCP 함정·설계 결정 표는 [`docs/operations.md`](docs/operations.md), 확장 방법은 [`docs/extending.md`](docs/extending.md).
 
 **발표자 없이 이 프로젝트를 처음 접한다면** [내러티브 랜딩페이지](https://yimsemin.github.io/commerce-decision-demo/)부터 보는 걸 권한다 -- 4개의 심어진 비즈니스 이슈 중 하나를 직접 골라, 데이터 패턴 → 증거 화면 → 시스템의 판단까지 끝까지 따라가 볼 수 있다. 소스는 [`docs/index.html`](docs/index.html)이며, GitHub Pages가 `main` 브랜치의 `docs/` 폴더를 그대로 서빙한다(별도 빌드 없음).
 
@@ -88,7 +90,7 @@ flowchart LR
 
 ## 스크린샷
 
-`docs/sample/app_snapshot.json`(2026-10-25 기준)으로 앱을 실제 실행(`streamlit run`)해 캡처한 것으로, 목업이 아니다.
+`docs/sample/app_snapshot.json`으로 앱을 실제 실행(`streamlit run`)해 캡처한 것으로, 목업이 아니다.
 
 | Overview | Marketing |
 |---|---|
@@ -115,7 +117,7 @@ uv sync --extra dev
 SNAPSHOT_LOCAL_PATH=docs/sample/app_snapshot.json uv run streamlit run src/commerce_lab/app/main.py
 ```
 
-샘플은 2026-10-25 라이브 리프레시가 만든 스냅샷이다(시드 28192950). 새 데이터를 만들려면 아래 명령을 쓴다.
+샘플은 마지막 라이브 리프레시가 만든 스냅샷이다(기준일 2026-10-25, 시드 28192950). 새 데이터를 만들려면 아래 명령을 쓴다.
 
 Python 3.14 필요(`.python-version`에 고정; 이 경로는 클라우드 계정이 필요 없다).
 
@@ -140,13 +142,13 @@ python -m commerce_lab.pipeline.refresh --upload --summarize
 ./scripts/provision_scheduler.sh    # Cloud Run Job + 매일 실행되는 Cloud Scheduler 트리거
 ```
 
-해체(되돌릴 수 없음 -- 명시적으로 `--yes` 필요):
+정리(되돌릴 수 없음 -- 명시적으로 `--yes` 필요):
 
 ```bash
 ./scripts/teardown_gcp.sh --yes
 ```
 
-**프로젝트 `commerce-decision-demo`에 실제로 배포해 Cloud Scheduler 무인 실행까지 검증한 뒤 2026-10-25에 해체했다.** 항목별 검증 상태는 [`docs/verification.md`](docs/verification.md), 배포했던 리소스는 [`docs/operations.md`](docs/operations.md)의 "배포한 리소스" 절을 참고. 직접 실행하기 전에 알아둘 것:
+**이 구성은 실제 GCP 프로젝트에 배포해 Cloud Scheduler 무인 실행까지 검증했다.** 항목별 검증 상태는 [`docs/verification.md`](docs/verification.md), 리소스 구성과 재시작 절차는 [`docs/operations.md`](docs/operations.md)를 참고. 직접 실행하기 전에 알아둘 것:
 
 - Windows + Python 3.14 환경에서 `bq`가 PATH에 있어도 `python3.14: command not found`로 실패할 수 있다. 그럴 때는 `CLOUDSDK_PYTHON="C:\Python314\python.exe" CLOUDSDK_BQ_PYTHON="C:\Python314\python.exe"`를 앞에 붙인다.
 - 앱은 로그인 없이 공개 접근하도록 배포했다. 호스팅 조직이 도메인 제한 공유 정책을 쓰면 `--allow-unauthenticated`만으로는 공개되지 않아, 조직 정책은 그대로 두고 이 프로젝트에만 예외를 두는 방법을 쓴다 -- [`docs/operations.md`](docs/operations.md)의 "앱 공개 접근 설정" 참고.
@@ -159,11 +161,11 @@ python -m commerce_lab.pipeline.refresh --upload --summarize
 - Cloud Scheduler는 리프레시 job을 하루에 한 번만 실행한다.
 - 시크릿은 커밋하지 않는다. `GCP_PROJECT_ID`/`GCS_BUCKET`은 평범한 환경변수(비밀값 아님)다.
 - `scripts/teardown_gcp.sh`가 전체 정리를 문서화하고 자동화한다.
-- 위의 볼륨/스케일 제한에 더해, 예상 밖의 비용에 대한 안전장치로 프로젝트에 Cloud Billing 예산 알림(작은 임계값, 50/90/100%에서 결제 관리자에게 이메일)을 걸어두었다.
+- 예상 밖의 비용에 대한 안전장치로 Cloud Billing 예산 알림(50/90/100%)과, 예산 초과 시 프로젝트 결제를 끊는 하드캡 함수를 둔다([`docs/operations.md`](docs/operations.md)의 "예산과 하드캡").
 
 ## 한계
 
-- [`docs/verification.md`](docs/verification.md)의 모든 항목이 클라우드에서 검증되었으며, Cloud Scheduler job의 실제 무인 트리거 발동까지 포함한다(1회성 테스트 스케줄로 라이브 확인, 동일한 수동 `gcloud run jobs execute` 경로만이 아니다).
+- [`docs/verification.md`](docs/verification.md)의 모든 항목을 클라우드에서 검증했다. Cloud Scheduler의 무인 트리거도 1회성 테스트 스케줄로 확인했다.
 - **확장 구조는 데모 규모다.** 관점 추가는 코드 변경 + 재배포가 필요하고(플러그인 마켓 없음), 앱에서 조정한 임계값은 세션에만 남는다. 임계값은 이슈 판정에만 영향을 주며 지표 계산 옵션은 설정 파일 + 리프레시로만 바꾼다.
 - **임계값은 데모용 기본값이다.** 의사결정 규칙과 재고 위험 임계값(`docs/decision_rules.md`, `docs/kpi_definitions.md`)은 심어놓은 시나리오를 탐지 가능하게 하려고 정한 것이며, 실제 리테일 벤치마크에 맞춘 것이 아니다.
 - **CAC는 채널 단위뿐이다.** 합성 고객 모델이 획득 채널을 브랜드와 연결하지 않으므로, 브랜드 x 채널 CAC 분리는 이 데이터로 방어할 수 없다.
