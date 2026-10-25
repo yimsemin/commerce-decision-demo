@@ -1,8 +1,10 @@
 # Commerce Decision Lab
 
+> **상태: 오픈 아카이브 (2026-10-25).** 기능 추가·이슈 대응 없이 현재 상태로 공개한다. GCP 리소스는 2026-10-25에 해체해 라이브 앱은 없다. 결과는 [랜딩페이지](https://yimsemin.github.io/commerce-decision-demo/), 아래 스크린샷, 라이브 앱이 마지막으로 읽은 스냅샷 [`docs/sample/app_snapshot.json`](docs/sample/app_snapshot.json)(Gemini 요약 포함)으로 볼 수 있고, 코드는 클라우드 없이 로컬에서 그대로 실행된다.
+
 파편화된 합성 커머스 데이터를 경영 의사결정의 근거로 바꾸는 Google Cloud 포트폴리오 샘플: **무엇이 바뀌었고, 왜 바뀌었고, 무엇에 주목해야 하고, 어떻게 해야 하는지**를 보여준다 -- 위에 얹힌 AI가 아니라 그 아래의 결정적 계산이 중심이다.
 
-프로덕션 커머스 플랫폼이 아니라 데모이며, 실제 회사/고객 데이터를 쓰지 않는다. 전체 스펙: [`docs/PROJECT.md`](docs/PROJECT.md). 라이브 리소스·운영·설계 결정: [`docs/operations.md`](docs/operations.md), 항목별 검증 상태: [`docs/verification.md`](docs/verification.md).
+프로덕션 커머스 플랫폼이 아니라 데모이며, 실제 회사/고객 데이터를 쓰지 않는다. 전체 스펙: [`docs/PROJECT.md`](docs/PROJECT.md). 배포했던 리소스·운영·설계 결정: [`docs/operations.md`](docs/operations.md), 항목별 검증 상태: [`docs/verification.md`](docs/verification.md).
 
 **발표자 없이 이 프로젝트를 처음 접한다면** [내러티브 랜딩페이지](https://yimsemin.github.io/commerce-decision-demo/)부터 보는 걸 권한다 -- 4개의 심어진 비즈니스 이슈 중 하나를 직접 골라, 데이터 패턴 → 증거 화면 → 시스템의 판단까지 끝까지 따라가 볼 수 있다. 소스는 [`docs/index.html`](docs/index.html)이며, GitHub Pages가 `main` 브랜치의 `docs/` 폴더를 그대로 서빙한다(별도 빌드 없음).
 
@@ -34,7 +36,7 @@ flowchart LR
 
 | 컴포넌트 | 존재 이유 |
 |---|---|
-| 합성 데이터 생성기 | 이 프로젝트가 쓰는 유일한 데이터를 만든다 -- 시드 기반이라 같은 시드는 같은 데이터를 재현하고, 매일 실행 때는 새 랜덤 시드를 쓰며, 어떤 시드든 심어놓은 4개 비즈니스 시나리오가 뚜렷하게 나오도록 검증해([`docs/synthetic_data.md`](docs/synthetic_data.md))([`docs/synthetic_data.md`](docs/synthetic_data.md)) 나머지 시스템이 탐지할 진짜 대상을 제공한다 |
+| 합성 데이터 생성기 | 이 프로젝트가 쓰는 유일한 데이터를 만든다 -- 시드 기반이라 같은 시드는 같은 데이터를 재현하고, 매일 실행 때는 새 랜덤 시드를 쓰며, 어떤 시드든 심어놓은 4개 비즈니스 시나리오가 뚜렷하게 나오도록 검증해([`docs/synthetic_data.md`](docs/synthetic_data.md)) 나머지 시스템이 탐지할 진짜 대상을 제공한다 |
 | Cloud Storage | 원본 CSV의 집결지이자, 앱이 읽는 유일한 파일(`snapshot/app_snapshot.json`)이 있는 곳 -- 앱을 BigQuery와 완전히 분리한다 |
 | BigQuery (raw/staging/metrics) | 결정적 근거(source of truth). raw는 CSV를 그대로 반영, staging은 얇은 타입/중복제거 레이어, metrics는 문서화된 KPI 공식([`docs/kpi_definitions.md`](docs/kpi_definitions.md)) |
 | 의사결정 규칙 (Python) | metrics 레이어 위에서 동작하는 결정적, 임계값 기반 이슈 탐지([`docs/decision_rules.md`](docs/decision_rules.md)) -- "무엇이 문제인지"는 AI가 아니라 이 로직이 정한다 |
@@ -71,11 +73,22 @@ flowchart LR
 
 ## 언어
 
-앱은 한국어/영어를 사이드바에서 전환할 수 있다(기본값 한국어). 의사결정 카드의 문장(이슈 제목/유력한 원인/제안 조치)은 결정 규칙이 만든 구조화된 사실(`issue_type`/`affected`/`supporting_kpi`)로부터 언어별로 각각 렌더링되며(공통 문구는 [`app/i18n.py`](src/commerce_lab/app/i18n.py), 이슈별 문장은 해당 관점 모듈), KPI 식별자(`kpi_to_monitor` 등)는 번역하지 않는다 -- 식별자와 서술을 구분하는 것은 이 프로젝트의 일관된 원칙이다(`CLAUDE.md` 참고). Gemini 경영진 요약은 리프레시당 한 번, 영어로만 생성되므로 한국어 화면에서는 항상 같은 근거의 결정적 대체 요약을 보여준다.
+앱은 한국어/영어를 사이드바에서 전환할 수 있다(기본값 한국어). 의사결정 카드의 문장(이슈 제목/유력한 원인/제안 조치)은 결정 규칙이 만든 구조화된 사실(`issue_type`/`affected`/`supporting_kpi`)로부터 언어별로 각각 렌더링되며(공통 문구는 [`app/i18n.py`](src/commerce_lab/app/i18n.py), 이슈별 문장은 해당 관점 모듈), KPI 식별자(`kpi_to_monitor` 등)는 번역하지 않는다 -- 식별자와 서술을 구분하는 것은 이 프로젝트의 일관된 원칙이다(`AGENTS.md` 참고). Gemini 경영진 요약은 리프레시당 한 번, 영어로만 생성되므로 한국어 화면에서는 항상 같은 근거의 결정적 대체 요약을 보여준다.
+
+## 설계 판단에서 남은 경영 인사이트
+
+이 프로젝트를 만들며 정한 판단 중, 실제 의사결정 도구에도 적용되는 것들이다(구현 근거는 [`docs/operations.md`](docs/operations.md)의 "핵심 설계 결정").
+
+- **심각도는 규칙이 판단하고 금액은 순서만 정한다.** 이슈 정렬은 심각도가 1차이고, 같은 등급 안에서만 예상 매출 영향으로 정렬한다. 금액 추정이 불확실한 상태에서 금액이 큰 이슈가 위험한 이슈를 밀어내지 않게 하기 위해서다.
+- **근거 없는 숫자는 만들지 않는다.** 원가·판매가·주문 귀속 데이터가 없는 이슈는 예상 매출 영향을 비워 둔다. CAC도 데이터가 뒷받침하는 채널 단위까지만 계산한다. 그럴듯한 숫자는 신뢰를 빠르게 잃게 한다.
+- **임계값은 사업 판단이다.** "ROAS가 몇 % 떨어지면 이슈인가"는 같은 데이터에서도 이슈 개수를 바꾼다. 그래서 기본값을 코드에 숨기지 않고 화면의 슬라이더와 설정 파일로 드러냈다.
+- **이슈는 쌓이며 커진다.** 비교 시점을 과거로 옮기면 지금은 high인 이슈가 medium·low였던 단계가 보인다. 이슈를 일찍 잡는 가치와, 기준일마다 같은 규칙으로 다시 평가해야 하는 이유가 여기서 나온다.
+- **조치의 효과는 같은 규칙으로 다시 재서 확인한다.** 별도의 효과 측정 체계 없이, 탐지에 쓴 규칙을 새 데이터에 다시 적용해 이슈가 사라졌는지로 본다. 조치 전후의 판단 기준이 같아야 비교가 공정하다.
+- **AI는 계산하지 않고 설명한다.** 어떤 일이 문제인지는 결정적 규칙이 정하고, Gemini는 그 결과를 서술만 한다. 실패해도 결정적 요약으로 대체되어 의사결정 흐름이 멈추지 않는다.
 
 ## 스크린샷
 
-실제 로컬 실행(`streamlit run`)에서 캡처한 것으로, 목업이 아니다.
+`docs/sample/app_snapshot.json`(2026-10-25 기준)으로 앱을 실제 실행(`streamlit run`)해 캡처한 것으로, 목업이 아니다.
 
 | Overview | Marketing |
 |---|---|
@@ -94,6 +107,15 @@ flowchart LR
 접혀 있는 영역(근거 KPI, 전체 SKU, 임계값 패널, AI 프롬프트)은 제목에 "클릭하여 펼치기"와 내용 요약(예: 지표 5개)이 붙어 있다.
 
 ## 셋업 / 로컬 개발
+
+클라우드를 쓰지 않고도 저장소에 포함된 샘플 데이터로 앱을 바로 열 수 있다:
+
+```bash
+uv sync --extra dev
+SNAPSHOT_LOCAL_PATH=docs/sample/app_snapshot.json uv run streamlit run src/commerce_lab/app/main.py
+```
+
+샘플은 2026-10-25 라이브 리프레시가 만든 스냅샷이다(시드 28192950). 새 데이터를 만들려면 아래 명령을 쓴다.
 
 Python 3.14 필요(`.python-version`에 고정; 이 경로는 클라우드 계정이 필요 없다).
 
@@ -114,7 +136,7 @@ export GCS_BUCKET=your-project-commerce-lab   # 전역적으로 고유해야 함
 
 ./scripts/provision_gcp.sh          # GCS 버킷 + BigQuery raw/staging/metrics
 python -m commerce_lab.pipeline.refresh --upload --summarize
-./scripts/deploy_app.sh             # Cloud Run 앱 (지금은 의도적으로 인증 전용; 아래 참고)
+./scripts/deploy_app.sh             # Cloud Run 앱 (공개 접근 설정은 아래 참고)
 ./scripts/provision_scheduler.sh    # Cloud Run Job + 매일 실행되는 Cloud Scheduler 트리거
 ```
 
@@ -124,20 +146,20 @@ python -m commerce_lab.pipeline.refresh --upload --summarize
 ./scripts/teardown_gcp.sh --yes
 ```
 
-**프로젝트 `commerce-decision-demo`에 실제로 배포해 매일 Cloud Scheduler가 무인 실행 중이다.** 항목별 검증 상태는 [`docs/verification.md`](docs/verification.md), 라이브 리소스 현황은 [`docs/operations.md`](docs/operations.md)의 "라이브 리소스" 절을 참고. 직접 실행하기 전에 알아둘 것:
+**프로젝트 `commerce-decision-demo`에 실제로 배포해 Cloud Scheduler 무인 실행까지 검증한 뒤 2026-10-25에 해체했다.** 항목별 검증 상태는 [`docs/verification.md`](docs/verification.md), 배포했던 리소스는 [`docs/operations.md`](docs/operations.md)의 "배포한 리소스" 절을 참고. 직접 실행하기 전에 알아둘 것:
 
 - Windows + Python 3.14 환경에서 `bq`가 PATH에 있어도 `python3.14: command not found`로 실패할 수 있다. 그럴 때는 `CLOUDSDK_PYTHON="C:\Python314\python.exe" CLOUDSDK_BQ_PYTHON="C:\Python314\python.exe"`를 앞에 붙인다.
-- 앱은 로그인 없이 공개 접근 가능하다(`https://commerce-decision-app-6uj2ksurka-du.a.run.app`). 호스팅 조직이 도메인 제한 공유 정책을 쓰면 `--allow-unauthenticated`만으로는 공개되지 않아, 조직 정책은 그대로 두고 이 프로젝트에만 예외를 두는 방법을 쓴다 -- [`docs/operations.md`](docs/operations.md)의 "앱 공개 접근 설정" 참고.
+- 앱은 로그인 없이 공개 접근하도록 배포했다. 호스팅 조직이 도메인 제한 공유 정책을 쓰면 `--allow-unauthenticated`만으로는 공개되지 않아, 조직 정책은 그대로 두고 이 프로젝트에만 예외를 두는 방법을 쓴다 -- [`docs/operations.md`](docs/operations.md)의 "앱 공개 접근 설정" 참고.
 - 다른 컴퓨터나 새 에이전트 세션에서 이어간다면 [`docs/operations.md`](docs/operations.md)의 "새 환경에서 이어가기" 절을 참고 -- 자격 증명은 머신별로 따로 설정해야 하며 이 저장소에는 없다.
 
 ## 비용과 안전
 
 - 데이터 볼륨은 의도적으로 작다(주문 ~1,600건, SKU 24개, 재고 행 ~2,900개) -- BigQuery/Storage 비용은 사실상 무료 티어 수준이다.
-- Cloud Run 앱: `min-instances=0`, `max-instances=2`, 유휴 시 스케일 투 제로. 로그인 없이 공개 접근 가능하다 -- 실제 데이터가 아니라 합성 데이터만 있는 공개 포트폴리오 데모이고, `CLAUDE.md`의 범위 규율이 불필요한 인증 시스템 추가를 명시적으로 지양하기 때문이다.
+- Cloud Run 앱: `min-instances=0`, `max-instances=2`, 유휴 시 스케일 투 제로. 로그인 없이 공개 접근하도록 배포했다 -- 실제 데이터가 아니라 합성 데이터만 있는 공개 포트폴리오 데모이고, `AGENTS.md`의 범위 규율이 불필요한 인증 시스템 추가를 명시적으로 지양하기 때문이다.
 - Cloud Scheduler는 리프레시 job을 하루에 한 번만 실행한다.
 - 시크릿은 커밋하지 않는다. `GCP_PROJECT_ID`/`GCS_BUCKET`은 평범한 환경변수(비밀값 아님)다.
 - `scripts/teardown_gcp.sh`가 전체 정리를 문서화하고 자동화한다.
-- 위의 볼륨/스케일 제한에 더해, 예상 밖의 비용에 대한 안전장치로 라이브 프로젝트에 Cloud Billing 예산 알림(작은 임계값, 50/90/100%에서 결제 관리자에게 이메일)을 걸어두었다.
+- 위의 볼륨/스케일 제한에 더해, 예상 밖의 비용에 대한 안전장치로 프로젝트에 Cloud Billing 예산 알림(작은 임계값, 50/90/100%에서 결제 관리자에게 이메일)을 걸어두었다.
 
 ## 한계
 

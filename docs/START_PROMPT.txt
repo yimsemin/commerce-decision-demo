@@ -1,3 +1,5 @@
+[보존용: 프로젝트 첫 진행에 쓴 원본 지시문이다. 언급된 `PROGRESS.md`는 마일스톤이 끝나 저장소에 없고, 현재 규칙은 `AGENTS.md`에 있다.]
+
 `PROJECT.md`, `CLAUDE.md`, `PROGRESS.md`를 전부 읽어라.
 
 당신은 이 저장소를 빈 부트스트랩 상태에서 `PROJECT.md`의 Definition of Done까지 이끌어갈 책임을 진 리드 엔지니어다.

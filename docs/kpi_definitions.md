@@ -1,6 +1,6 @@
 # KPI 정의
 
-`CLAUDE.md`("메트릭 정의를 명시적으로 유지")와 `PROJECT.md` §6("정확한 공식은 한 곳에 문서화")에 따른, 모든 KPI 공식의 단일 출처. 다음 두 구현체가 존재하며 반드시 이 문서와 정확히 일치해야 한다:
+`AGENTS.md`("메트릭 정의를 명시적으로 유지")와 `PROJECT.md` §6("정확한 공식은 한 곳에 문서화")에 따른, 모든 KPI 공식의 단일 출처. 다음 두 구현체가 존재하며 반드시 이 문서와 정확히 일치해야 한다:
 
 - `sql/metrics/*.sql` — `staging.*` 위의 BigQuery 테이블 함수(`metrics.sales_summary(as_of, window_days)` 등). 리프레시 Job이 기준일마다 호출해 스냅샷의 KPI를 만드는, 클라우드에 배포된 권위 있는 경로.
 - `src/commerce_lab/metrics/*.py` — 로컬 개발(`PROJECT.md` §10)과 자동화 테스트용 pandas 기준 구현. `python -m commerce_lab.pipeline.parity --seed N`이 같은 데이터에서 두 구현의 모든 KPI와 의사결정 항목을 대조한다(반올림 한 단계 차이까지 허용).
