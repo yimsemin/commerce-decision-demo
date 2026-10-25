@@ -1,8 +1,8 @@
 """Builds the grounding prompt sent to Gemini.
 
-Per docs/PROJECT.md §7 and CLAUDE.md: Gemini interprets structured results, it
+Per docs/PROJECT.md §7 and AGENTS.md: Gemini interprets structured results, it
 is never the source of the facts. The prompt therefore embeds only the
-M4 decision items and a small set of top-line KPI numbers -- never raw
+decision items and a small set of top-line KPI numbers -- never raw
 orders/marketing/inventory rows -- and explicitly instructs the model
 not to invent facts and to state uncertainty.
 """

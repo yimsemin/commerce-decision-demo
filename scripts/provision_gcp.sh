@@ -27,7 +27,7 @@
 # `gsutil`) and `bq`. Does NOT create a GCP project, enable billing, or
 # grant any IAM role to anyone other than this project's own dedicated
 # service accounts -- creating a project / linking billing / any
-# broader IAM change stays an owner-only action per CLAUDE.md.
+# broader IAM change stays an owner-only action per AGENTS.md.
 #
 # Windows note: if `bq` fails with "python3.14: command not found" even
 # though Python 3.14 is on PATH, `bq`'s own interpreter-selection logic

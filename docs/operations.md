@@ -1,18 +1,17 @@
 # 운영
 
-현재 라이브 리소스, 운영 방법, 핵심 설계 결정. 제품 스펙은 [PROJECT.md](PROJECT.md), 규칙은 [AGENTS.md](../AGENTS.md).
+배포했던 리소스(2026-10-25 해체), 운영 방법, 핵심 설계 결정. 제품 스펙은 [PROJECT.md](PROJECT.md), 규칙은 [AGENTS.md](../AGENTS.md).
 
 ## 현재 상태
 
-모든 구성이 GCP 프로젝트 `commerce-decision-demo`(리전 `asia-northeast3`)에 배포되어 매일 자동 갱신된다. 데이터 생성 → GCS → BigQuery → KPI 계산(BigQuery) → 이슈 탐지 → Gemini 해석 → 스냅샷 → 앱 전 구간을 라이브로 검증했다([verification.md](verification.md)).
+GCP 프로젝트 `commerce-decision-demo`(리전 `asia-northeast3`)의 리소스는 2026-10-25에 `scripts/teardown_gcp.sh`로 모두 해체했다. 남은 것은 결제 예산(`commerce-decision-demo safety budget`)뿐이다. 해체 전에는 데이터 생성 → GCS → BigQuery → KPI 계산(BigQuery) → 이슈 탐지 → Gemini 해석 → 스냅샷 → 앱 전 구간이 매일 자동 갱신되었고 클라우드에서 검증했다([verification.md](verification.md)). 해체 직전의 스냅샷(Gemini 요약 포함)은 [sample/app_snapshot.json](sample/app_snapshot.json)에 있다.
 
-| 공개 주소 | 내용 |
+| 주소 | 내용 |
 |---|---|
 | https://github.com/yimsemin/commerce-decision-demo | 저장소(공개) |
 | https://yimsemin.github.io/commerce-decision-demo/ | 랜딩페이지. GitHub Pages가 `main`의 `docs/`를 서빙(빌드 없음) |
-| https://commerce-decision-app-6uj2ksurka-du.a.run.app | 앱. 로그인 없이 접근 |
 
-## 라이브 리소스
+## 배포한 리소스
 
 | 리소스 | 이름 | 비고 |
 |---|---|---|
@@ -26,7 +25,7 @@
 | Cloud Function | `budget-hardcap` (2nd gen) | 실지출이 예산 이상이면 프로젝트 결제를 끊는다 |
 | 서비스 계정 | `cloudbuild-deployer`, `commerce-app-runtime`, `commerce-refresh-runtime`, `budget-hardcap-runtime` | 각각 필요한 리소스에만 최소 권한. 프로젝트 기본 SA는 쓰지 않음 |
 
-## 운영
+## 운영 방법 (재배포 시)
 
 - **매일 갱신:** Scheduler가 06:00 KST에 Job을 실행한다. Job은 새 랜덤 시드로 데이터를 만들어 GCS에 올리고, BigQuery `raw`를 전체 교체한 뒤, `metrics` 함수로 기준일 61개(매일)의 KPI를 병렬로 계산하고, Gemini 요약(최신 기준일 1회)을 붙여 `snapshot/app_snapshot.json`을 올린다. 시드는 스냅샷의 `data_seed`와 `raw/commerce/날짜/seed.txt`(종료일 포함)에 남는다.
 - **수동 실행:** `gcloud run jobs execute commerce-lab-refresh --region asia-northeast3 --wait`. 같은 날 다시 실행하면 그날의 `raw` 폴더를 덮어쓴다.
@@ -36,11 +35,18 @@
 - **Gemini 끄기:** Job의 환경변수 `GEMINI_ENABLED=false`.
 - **보관:** `raw/commerce/날짜/`는 삭제하지 않는다. 하루 약 0.4MB(연 약 150MB)로 Always Free 5GB 이내이고, 앱은 스냅샷 JSON 1개(약 124KB)만 읽어 보관량과 무관하다.
 
+## 해체
+
+무료 체험 종료 후 결제하지 않으므로 체험 종료 전에 해체했다. 체험은 크레딧 $300 소진 또는 가입 후 90일 중 먼저 오는 시점에 끝나고, 업그레이드하지 않으면 청구 없이 결제 계정이 닫히며 워크로드가 정지된 뒤 30일 유예 후 삭제된다([FAQ](https://cloud.google.com/signup-faqs), [무료 기능·체험](https://docs.cloud.google.com/free/docs/free-cloud-features)). 삭제 시점이 불확실해 직접 해체하는 쪽을 택했다.
+
+- 2026-10-25에 `GCP_PROJECT_ID=commerce-decision-demo GCS_BUCKET=commerce-decision-demo-data bash scripts/teardown_gcp.sh --yes`를 실행했다. 이후 버킷·데이터셋·Cloud Run 서비스·Job·Scheduler·Artifact Registry·Cloud Functions가 모두 없음을 `list` 명령으로 확인했다.
+- 하드캡 함수 배포가 자동 만든 버킷 `gcf-v2-*` 2개와 Artifact Registry `gcf-artifacts`는 스크립트가 지우지 않아 수동으로 삭제했고, 스크립트에 그 단계를 추가했다.
+- 결제 예산은 콘솔에서 만든 것이라 남아 있다. 지출을 만들지 않는다.
+- 해체 전 스냅샷은 [sample/app_snapshot.json](sample/app_snapshot.json)에 보존했다.
+
 ## 예산과 하드캡
 
 예산 알림은 이메일만 보내고 지출을 막지 않으므로, 실지출이 예산 이상이면 `budget-hardcap`이 프로젝트 결제를 끊는다. 프로젝트 단위라 앱을 포함한 모든 과금 리소스가 함께 멈추고, 결제 계정을 다시 연결해야 복구된다. 함수는 받은 지출액을 `Budget alert: … cost=… budget=…` 로그로 남긴다. 함수의 서비스 계정에는 결제 계정 수준 `roles/billing.user`가 필요하며(결제 계정 IAM은 오너가 직접 부여), 부여 명령은 `scripts/provision_budget_hardcap.sh` 끝에 출력된다.
-
-비용 전제: 무료 체험이 끝난 뒤에도 사용량이 Always Free 범위 안이면 계속 운영한다. 체험 종료(대략 2026-12-23) 때 자동 유료 전환인지 정지인지는 GCP 공식 동작이 불확실하므로 그 전에 확인한다.
 
 ## 앱 공개 접근 설정
 
@@ -84,7 +90,7 @@ IAM 바인딩 명령은 에이전트 자동 모드가 차단하므로 오너가 
 - 맥락의 출처: [START_PROMPT.txt](START_PROMPT.txt)(최초 지시), [PROJECT.md](PROJECT.md), [AGENTS.md](../AGENTS.md), [README.md](../README.md), 이 문서.
 - 환경: `git clone https://github.com/yimsemin/commerce-decision-demo.git` → `git config core.hooksPath .githooks` → `uv sync --extra dev --extra pipeline`.
 - 자격 증명은 머신별로 설정한다: GCP는 `gcloud auth login`과 `gcloud auth application-default login`(오너 계정), GitHub는 `gh auth login`(계정 `yimsemin`). 저장소에는 어떤 자격 증명도 없다.
-- 라이브 리소스는 이미 있으므로 재생성하지 않는다. `scripts/provision_*.sh`는 멱등이지만 먼저 `gcloud run services list` 등으로 존재를 확인한다.
+- 클라우드 리소스는 해체되어 없다. 다시 올리려면 [README.md](../README.md)의 "배포 (GCP)" 절차를 따른다.
 
 ## 한계와 열린 항목
 

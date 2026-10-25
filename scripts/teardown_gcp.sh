@@ -84,6 +84,12 @@ gcloud functions delete budget-hardcap --region="${GCP_REGION}" --gen2 --quiet |
 echo "Deleting Pub/Sub topic budget-hardcap-alerts ..."
 gcloud pubsub topics delete budget-hardcap-alerts --quiet || echo "Topic already absent."
 
+echo "Deleting auto-created Cloud Functions buckets and image repo ..."
+for bucket in $(gcloud storage buckets list --project="${GCP_PROJECT_ID}" --format='value(name)' | grep '^gcf-v2-' || true); do
+    gcloud storage rm --recursive "gs://${bucket}" || echo "Bucket ${bucket} already absent."
+done
+gcloud artifacts repositories delete gcf-artifacts --location="${GCP_REGION}" --quiet || echo "Repo already absent."
+
 echo "Note: the billing budget itself and its billing-account-level IAM grant"
 echo "(roles/billing.user for budget-hardcap-runtime) are NOT removed by this"
 echo "script -- the budget was created manually in the console and leaving it"
